@@ -10,6 +10,8 @@
 		'application/ogg',
 		'application/vnd.rn-realmedia', //TODO: check this one
 		'application/x-shockwave-flash', //TODO: check this one
+		'audio/midi',
+		'audio/mp4',
 		'audio/mpeg',
 		'audio/x-wav',
 		'video/3gpp',
@@ -21,22 +23,29 @@
 		'video/x-matroska',
 		'video/x-ms-asf',
 		'video/x-msvideo',
-		'audio/mp4',
-		'audio/midi',
 	];
 
 	var NOT_MEDIA_FILE_MIME_TYPES = [
 		'application/CDFV2-corrupt',
 		'application/jar',
+		'application/msword',
 		'application/octet-stream',
 		'application/pdf',
+		'application/postscript',
 		'application/vnd.ms-cab-compressed',
+		'application/vnd.ms-fontobject',
 		'application/vnd.ms-office',
 		'application/vnd.ms-opentype',
+		'application/vnd.ms-powerpoint',
+		'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+		'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+		'application/x-bittorrent',
 		'application/x-dosexec',
+		'application/x-dvi',
 		'application/x-font-ttf',
 		'application/x-gnupg-keyring',
 		'application/x-gzip',
+		'application/x-iso9660-image',
 		'application/x-java-applet',
 		'application/x-pgp-keyring',
 		'application/x-rar',
@@ -46,6 +55,7 @@
 		'image/jpeg',
 		'image/png',
 		'image/svg+xml',
+		'image/tiff',
 		'image/vnd.adobe.photoshop',
 		'image/x-icon',
 		'image/x-ms-bmp',
@@ -67,9 +77,7 @@
 		'text/x-po',
 		'text/x-python',
 		'text/x-shellscript',
-		'application/vnd.ms-fontobject',
-		'application/x-dvi',
-		'application/x-bittorrent',
+		'text/x-tex',
 	];
 
 	//requires
