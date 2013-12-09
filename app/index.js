@@ -21,11 +21,18 @@ const MEDIA_FILE_MIME_TYPES = [
 
 const NOT_MEDIA_FILE_MIME_TYPES = [
 	'application/CDFV2-corrupt',
+	'application/jar',
 	'application/octet-stream',
 	'application/pdf',
+	'application/vnd.ms-cab-compressed',
 	'application/vnd.ms-office',
+	'application/vnd.ms-opentype',
 	'application/x-dosexec',
 	'application/x-font-ttf',
+	'application/x-gnupg-keyring',
+	'application/x-gzip',
+	'application/x-java-applet',
+	'application/x-pgp-keyring',
 	'application/x-rar',
 	'application/xml',
 	'application/zip',
@@ -38,9 +45,21 @@ const NOT_MEDIA_FILE_MIME_TYPES = [
 	'image/x-ms-bmp',
 	'image/x-paintnet',
 	'inode/x-empty',
+	'message/news',
+	'message/rfc822',
 	'text/html',
 	'text/plain',
+	'text/rtf',
+	'text/x-asm',
+	'text/x-c',
 	'text/x-c++',
+	'text/x-diff',
+	'text/x-msdos-batch',
+	'text/x-pascal',
+	'text/x-perl',
+	'text/x-php',
+	'text/x-po',
+	'text/x-python',
 	'text/x-shellscript',
 ];
 
@@ -91,7 +110,7 @@ function addMediaFileToDB(entriesToProcess) {
 						return nmf == mimeType;
 					});
 					if (!isKnownBadMimeType) {
-						logger.warn('Unknown mime type: "%s".', mimeType);
+						logger.warn('Unknown mime type "%s" for file %s.', mimeType, nextEntry);
 					}
 				}
 			});
