@@ -134,7 +134,9 @@
 					if (_.contains(MEDIA_FILE_MIME_TYPES, mimeType)) {
 						//logger.info('Added %s.', nextEntry);
 						return MediaFile.fromPath(nextEntry).then(function (mediaFile) {
-							return sqliteDao.putMediaFile(mediaFile);
+							return sqliteDao.putMediaFile(mediaFile).fail(function (err) {
+								logger.warn('Error saving MediaFile %j: %j.', mediaFile.toJSON(), err);
+							});
 						});
 					} else {
 						//For some reason '_.contains' did not work here.
