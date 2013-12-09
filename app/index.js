@@ -178,6 +178,9 @@ app.get('/', function (req, res) {
 	res.render('index.jade', {});
 });
 
+//PUBLIC FOLDER
+app.use('/public', express.static(path.join(ROOT, 'public')));
+
 //STATIC FILES
 app.use('/bootstrap', express.static(path.join(ROOT, 'vendor/bootstrap-3.0.3-dist')));
 app.get('/jquery.js', function (req, res) {

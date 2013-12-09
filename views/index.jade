@@ -4,43 +4,36 @@ html(lang="en")
 		title THMP
 		meta(name="viewport", content="width=device-width, initial-scale=1.0")
 		link(href="bootstrap/css/bootstrap.css" rel="stylesheet")
+		style.
+			audio {
+				width: 100%
+			}
 	body(style="padding: 0 15px;")
-		.row [Main play panel]
+		.row
+			.col-sm-2 [Not sure what to put here]
+			.col-sm-8
+				audio#audioTag(autoplay=true, controls=true, loop=false, preload="auto")
+			.col-sm-2 [Search bar here]
 		.row
 			.col-sm-2 [Playlists]
 			.col-sm-10
 				h1 [detailed view]
 				table#songList.table.table-striped.table-hover.table-condensed
-					tr
-						th title
-						th path
-					tr
-						td 1
-						td /home
-					tr
-						td 2
-						td /home/2
-					tr
-						td 3
-						td /home/3
+					thead
+						tr
+							th title
+							th path
+					tbody
+						tr
+							td 1
+							td /home
+						tr
+							td 2
+							td /home/2
+						tr
+							td 3
+							td /home/3
 		script(src="jquery.js")
 		script(src="bootstrap/js/bootstrap.js")
 		script(src="underscore.js")
-		script(type="text/javascript").
-			$(function() {
-				var $songListTable = $('#songList');
-				$.ajax({
-					type: 'GET',
-					url: '/api/1/mp3/',
-					accepts: 'application/json',
-					dataType: 'json',
-				}).done(function (songData, textStatus, jqXHR) {
-					$songListTable.empty();
-					_.each(songData, function (song) {
-						var url = '/api/1/mp3' + song[0];
-						$songListTable.append($('<tr><td>1</td><td><a href="'+url+'">'+song[0]+'</a></td></tr>'));
-					});
-				}).fail(function (jqXHR, textStatus, errorThrown) {
-					console.log(arguments); //TODO
-				})
-			});
+		script(src="public/main.js" type="text/javascript").
