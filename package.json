@@ -22,5 +22,9 @@
     "underscore": "~1.5.2",
     "dblite": "~0.4.1",
     "mime-magic": "~5.14.0"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "grunt-contrib-jshint": "~0.7.2"
   }
 }
