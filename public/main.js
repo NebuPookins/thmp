@@ -19,8 +19,8 @@ $(function() {
 		}).done(function (songData) {
 			$songListTable.empty();
 			_.each(songData, function (song) {
-				var url = '/api/1/mp3' + song[0];
-				var $newRow = $('<tr data-url="'+url+'"><td>1</td><td>'+song[0]+'</td></tr>');
+				var url = '/api/1/mp3' + song.path;
+				var $newRow = $('<tr data-url="'+url+'"><td>1</td><td>'+song.path+'</td></tr>');
 				$songListTable.append($newRow);
 			});
 		}).fail(function () {

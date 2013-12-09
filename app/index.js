@@ -88,19 +88,16 @@
 	var fs          = require('fs');
 	var log4js      = require('log4js');
 	var mime        = require('mime-magic');
-	var dblite      = require('dblite');
 	var path        = require('path');
 	var q           = require('q');
+	var SQLiteDAO   = require('./models/SQLiteDAO');
+	var MediaFile   = require('./models/MediaFile');
 
 	//Configuring requires
 	var ROOT = path.join(__dirname, '..');
 	var logger = log4js.getLogger(__filename);
 	q.longStackSupport = true;
-	var db = dblite(path.join(ROOT, DB_FILENAME));
-
-	//Create initial schema
-	db.query('CREATE TABLE IF NOT EXISTS MediaFile (id INTEGER PRIMARY KEY, path VARCHAR(256))');
-	db.query('CREATE UNIQUE INDEX IF NOT EXISTS idxMediaFile_path ON MediaFile (path)')
+	var sqliteDao = new SQLiteDAO(path.join(ROOT, DB_FILENAME));
 
 	/**
 	 * Returns a promise that, when resolved, means all the files in the specified
@@ -121,7 +118,9 @@
 				return q.nfcall(mime, nextEntry).then(function (mimeType) {
 					if (_.contains(MEDIA_FILE_MIME_TYPES, mimeType)) {
 						//logger.info('Added %s.', nextEntry);
-						db.query('INSERT OR REPLACE INTO MediaFile VALUES(null, ?)', [nextEntry]);
+						var mediaFile = new MediaFile();
+						mediaFile.path = nextEntry;
+						return sqliteDao.putMediaFile(mediaFile);
 					} else {
 						//For some reason '_.contains' did not work here.
 						var isKnownBadMimeType = _.some(NOT_MEDIA_FILE_MIME_TYPES, function (nmf) {
@@ -130,6 +129,7 @@
 						if (!isKnownBadMimeType) {
 							logger.warn('Unknown mime type "%s" for file %s.', mimeType, nextEntry);
 						}
+						return;
 					}
 				});
 			} else if (stat.isDirectory()) {
@@ -173,21 +173,23 @@
 	});
 
 	app.get('/api/1/mp3/', function(req, res) {
-		db.query('SELECT path FROM MediaFile', function (results) {
-			res.json(200, results);
-		});
+		sqliteDao.listMediaFile().then(function (results) {
+			var jsonResults = _.map(results, function (mediaFile) {
+				return mediaFile.toJSON();
+			});
+			res.json(200, jsonResults);
+		}).done();
 	});
 
 	app.get('/api/1/mp3/*', function(req, res) {
 		var requestedPath = '/' + req.params[0];
-		db.query('SELECT path FROM MediaFile WHERE path = ?', [requestedPath], function (results) {
-			assert.ok(results.length === 0 || results.length === 1);
-			if (results.length === 1) {
-				res.sendfile(results[0]);
+		sqliteDao.findMediaFileByPath(requestedPath).then(function (results) {
+			if (results) {
+				return res.sendfile(results.path);
 			} else {
-				res.send(404);
+				return res.send(404);
 			}
-		});
+		}).done();
 	});
 
 	app.get('/', function (req, res) {
