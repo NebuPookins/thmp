@@ -4,7 +4,24 @@ html(lang="en")
 		title THMP
 		meta(name="viewport", content="width=device-width, initial-scale=1.0")
 		link(href="bootstrap/css/bootstrap.css" rel="stylesheet")
-	body
-		h1 Hello World!
+	body(style="padding: 0 15px;")
+		.row [Main play panel]
+		.row
+			.col-sm-2 [Playlists]
+			.col-sm-10
+				h1 [detailed view]
+				table.table.table-striped.table-hover.table-condensed
+					tr
+						th id
+						th path
+					tr
+						td 1
+						td /home
+					tr
+						td 2
+						td /home/2
+					tr
+						td 3
+						td /home/3
 		script(src="jquery.js")
 		script(src="bootstrap/js/bootstrap.js")

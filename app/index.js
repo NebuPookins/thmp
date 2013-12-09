@@ -83,7 +83,7 @@ function addMediaFileToDB(entriesToProcess) {
 			//logger.trace('%s is a file, determining type...', nextEntry);
 			return q.nfcall(mime, nextEntry).then(function (mimeType) {
 				if (_.contains(MEDIA_FILE_MIME_TYPES, mimeType)) {
-					logger.info('Added %s.', nextEntry);
+					//logger.info('Added %s.', nextEntry);
 					db.query('INSERT INTO MediaFile VALUES(null, ?)', [nextEntry]);
 				} else {
 					//For some reason '_.contains' did not work here.
