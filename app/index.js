@@ -3,22 +3,42 @@ const PORT = 3000;
 const DB_FILENAME = ':memory:';
 
 const MEDIA_FILE_MIME_TYPES = [
+	'application/ogg',
+	'application/vnd.rn-realmedia', //TODO: check this one
+	'application/x-shockwave-flash', //TODO: check this one
 	'audio/mpeg',
+	'audio/x-wav',
+	'video/3gpp',
 	'video/mp4',
 	'video/mpeg',
 	'video/quicktime',
+	'video/webm',
 	'video/x-flv',
+	'video/x-matroska',
 	'video/x-ms-asf',
 	'video/x-msvideo',
 ];
 
 const NOT_MEDIA_FILE_MIME_TYPES = [
+	'application/CDFV2-corrupt',
 	'application/octet-stream',
+	'application/pdf',
+	'application/vnd.ms-office',
 	'application/x-dosexec',
 	'application/x-font-ttf',
+	'application/x-rar',
 	'application/xml',
+	'application/zip',
+	'image/gif',
 	'image/jpeg',
+	'image/png',
+	'image/svg+xml',
+	'image/vnd.adobe.photoshop',
+	'image/x-icon',
+	'image/x-ms-bmp',
+	'image/x-paintnet',
 	'inode/x-empty',
+	'text/html',
 	'text/plain',
 	'text/x-c++',
 	'text/x-shellscript',
