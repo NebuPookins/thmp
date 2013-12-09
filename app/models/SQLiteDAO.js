@@ -1,18 +1,26 @@
-/*globals require, module*/
+/*globals __filename, require, module*/
 
 (function () {
 	'use strict';
 
 	var _         = require('underscore');
 	var assert    = require('assert');
+	var log4js      = require('log4js');
 	var MediaFile = require('./MediaFile');
 	var dblite    = require('dblite');
 	var q         = require('q');
 
+	var logger = log4js.getLogger(__filename);
+
 	function SQLiteDAO(pathToDb) {
 		this.db = dblite(pathToDb);
+
+		this.db.on('info', function () { logger.info(arguments); });
+		this.db.on('error', function () { logger.error(arguments); });
+		this.db.on('close', function () { logger.info(arguments); });
 		//Create initial schema
-		this.db.query([
+		
+		q.ninvoke(this.db, "query", [
 			'CREATE TABLE IF NOT EXISTS MediaFile (',
 			'	id INTEGER PRIMARY KEY,',
 			'	path VARCHAR(256),',
@@ -22,14 +30,15 @@
 			'	year VARCHAR(10),',
 			'	tag TEXT',
 			')'
-		].join(' '));
-		this.db.query('CREATE UNIQUE INDEX IF NOT EXISTS idxMediaFile_path ON MediaFile (path)');
+		].join(' ')).done();
+		q.ninvoke(this.db, "query",
+			'CREATE UNIQUE INDEX IF NOT EXISTS idxMediaFile_path ON MediaFile (path)'
+		).done();
 	}
 
 	SQLiteDAO.prototype.putMediaFile = function (mediaFile) {
 		assert.ok(mediaFile instanceof MediaFile);
-		var deferred = q.defer();
-		this.db.query([
+		return q.ninvoke(this.db, 'query', [
 				'INSERT OR REPLACE INTO MediaFile',
 				'(path, artists, title, album, year, tag) VALUES(',
 				':path, :artists, :title, :album, :year, :tag)'
@@ -41,16 +50,8 @@
 				album: mediaFile.album,
 				year: mediaFile.year,
 				tag: JSON.stringify(mediaFile.tag)
-			},
-			function (err) {
-				if (err) {
-					deferred.reject(err);
-				} else {
-					deferred.resolve();
-				}
 			}
 		);
-		return deferred.promise;
 	};
 
 	function selectMediaFile(db, whereClause, queryParams) {
@@ -97,5 +98,4 @@
 		});
 	};
 	module.exports = SQLiteDAO;
-
 })();
