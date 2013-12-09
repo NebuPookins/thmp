@@ -136,9 +136,15 @@
 			} else if (stat.isDirectory()) {
 				//logger.trace('%s is a directory. Gettings its contents...', nextEntry);
 				return q.nfcall(fs.readdir, nextEntry).then(function(dirContents) {
+
 					var absolutePaths = _.map(dirContents, function (relPath) {
 						return path.join(nextEntry, relPath);
 					});
+					/*
+					 * Shuffled so that we don't scan the same directories in the same
+					 * order every time.
+					 */
+					absolutePaths = _.shuffle(absolutePaths);
 					entriesToProcess = entriesToProcess.concat(absolutePaths);
 				});
 			}
