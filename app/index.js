@@ -2,6 +2,28 @@
 const PORT = 3000;
 const DB_FILENAME = ':memory:';
 
+const MEDIA_FILE_MIME_TYPES = [
+	'audio/mpeg',
+	'video/mp4',
+	'video/mpeg',
+	'video/quicktime',
+	'video/x-flv',
+	'video/x-ms-asf',
+	'video/x-msvideo',
+];
+
+const NOT_MEDIA_FILE_MIME_TYPES = [
+	'application/octet-stream',
+	'application/x-dosexec',
+	'application/x-font-ttf',
+	'application/xml',
+	'image/jpeg',
+	'inode/x-empty',
+	'text/plain',
+	'text/x-c++',
+	'text/x-shellscript',
+];
+
 //requires
 const _           = require('underscore');
 const assert      = require('assert');
@@ -40,10 +62,17 @@ function addMediaFileToDB(entriesToProcess) {
 		if (stat.isFile()) {
 			//logger.trace('%s is a file, determining type...', nextEntry);
 			return q.nfcall(mime, nextEntry).then(function (mimeType) {
-				if (mimeType === "audio/mpeg") {
+				if (_.contains(MEDIA_FILE_MIME_TYPES, mimeType)) {
+					logger.info('Added %s.', nextEntry);
 					db.query('INSERT INTO MediaFile VALUES(null, ?)', [nextEntry]);
 				} else {
-					//TODO
+					//For some reason '_.contains' did not work here.
+					var isKnownBadMimeType = _.some(NOT_MEDIA_FILE_MIME_TYPES, function (nmf) {
+						return nmf == mimeType;
+					});
+					if (!isKnownBadMimeType) {
+						logger.warn('Unknown mime type: "%s".', mimeType);
+					}
 				}
 			});
 		} else if (stat.isDirectory()) {
@@ -60,9 +89,15 @@ function addMediaFileToDB(entriesToProcess) {
 	});
 }
 
+function getUserHome() {
+	return process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
+}
+
 logger.info('thmp starting up...');
 
-addMediaFileToDB(['/home/nebu/mnt/documents/My Music/']).done();
+addMediaFileToDB([getUserHome()]).then(function() {
+	logger.info('Finished scanning for media files.');
+}).done();
 
 const app = express();
 
@@ -89,10 +124,8 @@ app.get('/api/1/mp3/', function(req, res) {
 });
 
 app.get('/api/1/mp3/*', function(req, res) {
-	console.log(req.params[0]);
 	var requestedPath = '/' + req.params[0];
 	db.query('SELECT path FROM MediaFile WHERE path = ?', [requestedPath], function (results) {
-		console.log(results);
 		assert.ok(results.length === 0 || results.length === 1);
 		if (results.length === 1) {
 			res.sendfile(results[0]);
