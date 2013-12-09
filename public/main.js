@@ -20,7 +20,7 @@ $(function() {
 			$songListTable.empty();
 			_.each(songData, function (song) {
 				var url = '/api/1/mp3' + song.path;
-				var $newRow = $('<tr data-url="'+url+'"><td>1</td><td>'+song.path+'</td></tr>');
+				var $newRow = $('<tr data-url="'+url+'"><td>'+song.artists+'</td><td>'+song.title+'</td><td>'+song.album+'</td><td>'+song.year+'</td><td>'+song.path+'</td></tr>');
 				$songListTable.append($newRow);
 			});
 		}).fail(function () {

@@ -124,9 +124,9 @@
 				return q.nfcall(mime, nextEntry).then(function (mimeType) {
 					if (_.contains(MEDIA_FILE_MIME_TYPES, mimeType)) {
 						//logger.info('Added %s.', nextEntry);
-						var mediaFile = new MediaFile();
-						mediaFile.path = nextEntry;
-						return sqliteDao.putMediaFile(mediaFile);
+						return MediaFile.fromPath(nextEntry).then(function (mediaFile) {
+							return sqliteDao.putMediaFile(mediaFile);
+						});
 					} else {
 						//For some reason '_.contains' did not work here.
 						var isKnownBadMimeType = _.some(NOT_MEDIA_FILE_MIME_TYPES, function (nmf) {
