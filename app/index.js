@@ -4,7 +4,7 @@
 	'use strict';
 	//configurable constants
 	var PORT = 3000;
-	var DB_FILENAME = ':memory:';
+	var DB_FILENAME = 'songDb.1.sqlite';
 
 	var MEDIA_FILE_MIME_TYPES = [
 		'application/ogg',
@@ -93,12 +93,14 @@
 	var q           = require('q');
 
 	//Configuring requires
+	var ROOT = path.join(__dirname, '..');
 	var logger = log4js.getLogger(__filename);
 	q.longStackSupport = true;
-	var db = dblite(DB_FILENAME);
+	var db = dblite(path.join(ROOT, DB_FILENAME));
 
 	//Create initial schema
 	db.query('CREATE TABLE IF NOT EXISTS MediaFile (id INTEGER PRIMARY KEY, path VARCHAR(256))');
+	db.query('CREATE UNIQUE INDEX IF NOT EXISTS idxMediaFile_path ON MediaFile (path)')
 
 	/**
 	 * Returns a promise that, when resolved, means all the files in the specified
@@ -119,7 +121,7 @@
 				return q.nfcall(mime, nextEntry).then(function (mimeType) {
 					if (_.contains(MEDIA_FILE_MIME_TYPES, mimeType)) {
 						//logger.info('Added %s.', nextEntry);
-						db.query('INSERT INTO MediaFile VALUES(null, ?)', [nextEntry]);
+						db.query('INSERT OR REPLACE INTO MediaFile VALUES(null, ?)', [nextEntry]);
 					} else {
 						//For some reason '_.contains' did not work here.
 						var isKnownBadMimeType = _.some(NOT_MEDIA_FILE_MIME_TYPES, function (nmf) {
@@ -155,8 +157,6 @@
 	}).done();
 
 	var app = express();
-
-	var ROOT = path.join(__dirname, '..');
 
 	app.engine('html', consolidate.jade); //Assign the JADE engine to .html files
 	app.set('view engine', 'html'); //Set .html as the default extension
