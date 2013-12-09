@@ -38,6 +38,7 @@
 		'application/vnd.ms-opentype',
 		'application/vnd.ms-powerpoint',
 		'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+		'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 		'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 		'application/x-bittorrent',
 		'application/x-dosexec',
