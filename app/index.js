@@ -148,7 +148,7 @@ app.set('views', path.join(ROOT, 'views'));
 
 //Log all requests
 app.use(function(req, res, next) {
-	logger.trace('%s %s', req.method, req.url);
+	//logger.trace('%s %s', req.method, req.url);
 	next();
 });
 
