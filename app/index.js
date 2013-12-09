@@ -164,6 +164,9 @@ app.use('/bootstrap', express.static(path.join(ROOT, 'vendor/bootstrap-3.0.3-dis
 app.get('/jquery.js', function (req, res) {
 	res.sendfile(path.join(ROOT, 'vendor/jquery-2.0.3.js'))
 });
+app.get('/underscore.js', function (req, res) {
+	res.sendfile(path.join(ROOT, 'node_modules/underscore/underscore.js'))
+});
 
 app.listen(PORT);
 logger.info('thmp server listening on port %d.', PORT);
