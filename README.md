@@ -68,10 +68,3 @@ https://github.com/NebuPookins/thmp
   "Release" which maps onto what ID3v2, Vorbis, etc. all call "Album". In this
   case, we prefer user familiarity over pendantry, and thus will refer to the
   concept as "Album", not "Release".
-
-# TODO
-
-* Implement fingerprinting/PUID lookup. http://musicbrainz.org/doc/How_PUIDs_Work
-  http://musicbrainz.org/doc/Development/XML_Web_Service/Version_2
-  http://musicbrainz.org/doc/Fingerprinting
-  http://musicbrainz.org/doc/AcoustID
