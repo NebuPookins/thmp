@@ -15,6 +15,7 @@
 		'audio/mpeg',
 		'audio/x-aiff',
 		'audio/x-mod',
+		'audio/x-mp4a-latm',
 		'audio/x-wav',
 		'video/3gpp',
 		'video/mp4',
@@ -26,7 +27,6 @@
 		'video/x-matroska',
 		'video/x-ms-asf',
 		'video/x-msvideo',
-		
 	];
 
 	var NOT_MEDIA_FILE_MIME_TYPES = [
@@ -52,6 +52,7 @@
 		'application/x-123',
 		'application/x-archive',
 		'application/x-bittorrent',
+		'application/x-cpio',
 		'application/x-dosexec',
 		'application/x-dvi',
 		'application/x-font-sfn',
@@ -65,6 +66,7 @@
 		'application/x-pgp-keyring',
 		'application/x-rar',
 		'application/x-sharedlib',
+		'application/x-tar',
 		'application/x-tex-tfm',
 		'application/xml',
 		'application/zip',
@@ -78,9 +80,11 @@
 		'image/x-ms-bmp',
 		'image/x-paintnet',
 		'image/x-portable-bitmap',
+		'image/x-portable-pixmap',
 		'inode/x-empty',
 		'message/news',
 		'message/rfc822',
+		'model/vrml',
 		'text/html',
 		'text/plain',
 		'text/rtf',
