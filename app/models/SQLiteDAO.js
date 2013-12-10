@@ -22,29 +22,30 @@
 		
 		q.ninvoke(this.db, "query", [
 			'CREATE TABLE IF NOT EXISTS MediaFile (',
-			'	id INTEGER PRIMARY KEY,',
-			'	path VARCHAR(256),',
+			'	id INTEGER PRIMARY KEY NOT NULL,',
+			'	path VARCHAR(256) UNIQUE NOT NULL,',
+			'	mimeType VARCHAR(32) NOT NULL,',
 			'	artists VARCHAR(256),',
 			'	title VARCHAR(256),',
 			'	album VARCHAR(256),',
 			'	year VARCHAR(10),',
+			'	acousticId VARCHAR(36),',
+			'	acousticIdScore REAL,',
 			'	tag TEXT',
 			')'
 		].join(' ')).done();
-		q.ninvoke(this.db, "query",
-			'CREATE UNIQUE INDEX IF NOT EXISTS idxMediaFile_path ON MediaFile (path)'
-		).done();
 	}
 
 	SQLiteDAO.prototype.putMediaFile = function (mediaFile) {
 		assert.ok(mediaFile instanceof MediaFile);
 		return q.ninvoke(this.db, 'query', [
 				'INSERT OR REPLACE INTO MediaFile',
-				'(path, artists, title, album, year, tag) VALUES(',
-				':path, :artists, :title, :album, :year, :tag)'
+				'(path, mimeType, artists, title, album, year, tag) VALUES(',
+				':path, :mimeType, :artists, :title, :album, :year, :tag)'
 			].join(' '),
 			{
 				path: mediaFile.path,
+				mimeType: mediaFile.mimeType,
 				artists: JSON.stringify(mediaFile.artists),
 				title: mediaFile.title,
 				album: mediaFile.album,
@@ -57,10 +58,11 @@
 	function selectMediaFile(db, whereClause, queryParams) {
 		return q.promise(function (resolve, reject) {
 			db.query(
-				'SELECT path, artists, title, album, year, tag FROM MediaFile ' + whereClause,
+				'SELECT path, mimeType, artists, title, album, year, tag FROM MediaFile ' + whereClause,
 				queryParams,
 				{
 					path: String,
+					mimeType: String,
 					artists: JSON.parse,
 					title: String,
 					album: String,
@@ -73,7 +75,7 @@
 					}
 					assert.ok(_.isArray(results));
 					var objs = _.map(results, function (row) {
-						return new MediaFile(row.path, row.artists, row.title, row.album, row.year, row.tag);
+						return new MediaFile(row.path, row.mimeType, row.artists, row.title, row.album, row.year, row.tag);
 					});
 					return resolve(objs);
 				});

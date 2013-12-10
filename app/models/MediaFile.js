@@ -6,6 +6,7 @@
 	var assert = require('assert');
 	var id3js  = require('id3js');
 	var log4js = require('log4js');
+	var mime   = require('mime-magic');
 	var q      = require('q');
 
 	var logger = log4js.getLogger(__filename);
@@ -24,13 +25,15 @@
 		return value === null || _.isString(value);
 	}
 
-	function MediaFile(path, artists, title, album, year, tag) {
+	function MediaFile(path, mimeType, artists, title, album, year, tag) {
 		assertType(_.isString, 'path', path);
+		assertType(_.isString, 'mimeType', mimeType);
 		assertType(_.isArray, 'artists', artists);
 		assertType(isStringOrNull, 'title', title);
 		assertType(isStringOrNull, 'album', album);
 		assertType(isStringOrNull, 'year', year);
 		this.path = path;
+		this.mimeType = mimeType;
 		this.artists = artists;
 		this.title = title;
 		this.album = album;
@@ -46,15 +49,25 @@
 	 */
 	MediaFile.fromPath = function (path) {
 		assert.ok(_.isString(path));
-		return q.nfcall(id3js, {file: path, type: id3js.OPEN_LOCAL}).then(function (tags) {
-			var retVal = new MediaFile(path, [tags.artist], tags.title, tags.album, tags.year, tags);
-			return retVal;
+		var promisedTags = q.nfcall(id3js, {file: path, type: id3js.OPEN_LOCAL});
+		var promisedMime = q.nfcall(mime, path);
+		return q.all([promisedMime, promisedTags]).spread(function (mimeType, tags) {
+			var artists;
+			if (tags.artist === null) {
+				artists = [];
+			} else {
+				artists = [tags.artist];
+			}
+			return new MediaFile(
+				path, mimeType, artists, tags.title, tags.album, tags.year, tags
+			);
 		});
 	};
 
 	MediaFile.prototype.toJSON = function() {
 		return {
 			path: this.path,
+			mimeType: this.mimeType,
 			artists: this.artists,
 			title: this.title,
 			album: this.album,
