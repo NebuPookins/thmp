@@ -37,3 +37,21 @@ it'll probably end up being GPL3.
 # What's the official homepage?
 
 https://github.com/NebuPookins/thmp
+
+# What's the vision/philosophy?
+
+* There's the "abstract, platonic ideal of a song" and there's the "physical
+  manifestation as a stream of bytes". Most other music players make the latter
+  the axiomatic element upon which the rest of the software is based. Thmp
+  focuses on the former. If I want to hear Eminem's latest hit, I don't care if
+  the data comes from an mp3 file, from GrooveShark, from Youtube, or whatever,
+  I just want to listen to the damn song.
+* MusicBrainz has put [a lot of thought](http://musicbrainz.org/doc/MusicBrainz_Database/Schema)
+  into explicitly modeling this distinction between the platonic form of the
+  song (a "[work](http://musicbrainz.org/doc/Work)"), and its manifestations
+  (a "[recording/Released Track](http://musicbrainz.org/doc/Recording)"). We
+  want to reuse as much of this thought as possible in our design.
+
+# TODO
+
+* Implement fingerprinting/PUID lookup. http://musicbrainz.org/doc/How_PUIDs_Work
