@@ -51,7 +51,25 @@ https://github.com/NebuPookins/thmp
   song (a "[work](http://musicbrainz.org/doc/Work)"), and its manifestations
   (a "[recording/Released Track](http://musicbrainz.org/doc/Recording)"). We
   want to reuse as much of this thought as possible in our design.
+* When reading tagging data from a media file (e.g. ID3v2 tags from an mp3 file),
+  this information should only be used to help identify/associate the concrete
+  media file with the platonic song/work. One implication of this is that a
+  single manifestation (e.g. a single mp3 file) can serve as the recording for
+  multiple albums (e.g. if the same song appears on multiple albums), even though
+  the ID3v2 tag only lists a single album.
+* For many tagging formats, there is no convenient way to encoding the metadata
+  that thmp derives back into the file (for example, it's not obviously
+  desirable to encode every album a given track appears on in ID3v2). As such,
+  thmp will perform little-to-no writing of tags back onto the media files. At
+  most, it might write the PUID and MBID into extended attributes in the tag.
+* MusicBrainz uses some terms which are more pedantically correct, but which
+  [essentially map](http://musicbrainz.org/doc/MusicBrainz_Picard/Tags/Mapping)
+  onto commonly used existing terms. For example, MusicBrainz uses the term
+  "Release" which maps onto what ID3v2, Vorbis, etc. all call "Album". In this
+  case, we prefer user familiarity over pendantry, and thus will refer to the
+  concept as "Album", not "Release".
 
 # TODO
 
 * Implement fingerprinting/PUID lookup. http://musicbrainz.org/doc/How_PUIDs_Work
+  http://musicbrainz.org/doc/Development/XML_Web_Service/Version_2
