@@ -5,3 +5,5 @@
 /songDb.*.sqlite
 # Ignore file created by sublime
 /thmp.sublime-workspace
+# Ignore IntelliJ/phpStorm project
+.idea
