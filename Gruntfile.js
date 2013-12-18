@@ -40,7 +40,6 @@
 
 		grunt.loadNpmTasks('grunt-contrib-jshint');
 		grunt.loadNpmTasks('grunt-contrib-watch');
-		grunt.loadNpmTasks('grunt-express-server');
 		grunt.registerTask('default', ['jshint', 'watch']);
 	};
 }());
