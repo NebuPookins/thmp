@@ -216,6 +216,12 @@
 			absolutePaths = _.shuffle(absolutePaths);
 			entriesToProcess = entriesToProcess.concat(absolutePaths);
 		});
+		/*
+		 * TODO: Apparently this could fail if the directory is actually a symlink
+		 * to a device that's not mounted, e.g. a cdrom drive.
+		 *
+		 * You get ENOTDIR, but not sure of the error code.
+		 */
 	}
 
 	function processFile(pathToFile) {
