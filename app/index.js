@@ -126,7 +126,8 @@
 
 	//Configuring requires
 	var ROOT = path.join(__dirname, '..');
-	var logger = log4js.getLogger(__filename);
+	var logger = log4js.getLogger(path.relative(ROOT, __filename));
+	logger.setLevel(log4js.levels.INFO);
 	q.longStackSupport = true;
 	var sqliteDao = new SQLiteDAO(path.join(ROOT, DB_FILENAME));
 
@@ -138,20 +139,24 @@
 		//logger.trace('Entering addMediaFileToDB2.');
 		assert.ok(_.isArray(entriesToProcess));
 		if (entriesToProcess.length === 0) {
-			//logger.trace('All entries processed. addMediaFileToDB2 is done.');
+			logger.trace('All entries processed. addMediaFileToDB2 is done.');
 			return q.promise(function (resolve) { resolve(); });
 		}
 		var nextEntry = entriesToProcess.pop();
 		//logger.trace('Processing %s. Is it a file or a dir?', nextEntry);
 		return q.nfcall(fs.stat, nextEntry).then(function (stat) {
 			if (stat.isFile()) {
-				//logger.trace('%s is a file, determining type...', nextEntry);
+				logger.trace('%s is a file, determining type...', nextEntry);
 				return q.nfcall(mime, nextEntry).then(function (mimeType) {
 					if (_.contains(MEDIA_FILE_MIME_TYPES, mimeType)) {
-						//logger.info('Added %s.', nextEntry);
+						logger.info('Added %s.', nextEntry);
 						return MediaFile.fromPath(nextEntry).then(function (mediaFile) {
 							return sqliteDao.putMediaFile(mediaFile).fail(function (err) {
-								logger.warn('Error saving MediaFile %j: %j.', mediaFile.toJSON(), err);
+								if (err instanceof Error) {
+									console.log(err);
+								} else {
+									logger.warn('Error saving MediaFile %j: %s.', mediaFile.toJSON(), err);
+								}
 							});
 						});
 					} else {
@@ -180,6 +185,19 @@
 					entriesToProcess = entriesToProcess.concat(absolutePaths);
 				});
 			}
+		}).fail(function (err) {
+			if (err instanceof Error) {
+				if (err.errno === 34 && err.code === 'ENOENT') {
+					/*
+					 * This can happen if we found a symbolic link, but the file that the
+					 * symbolic points to does not exist. In this case, we just ignore
+					 * this file, and continue on.
+					 */
+					return;
+				}
+			}
+			//This is some failure we don't know how to handle, so rethrow it.
+			throw err;
 		}).then(function () {
 			return addMediaFileToDB(entriesToProcess);
 		});

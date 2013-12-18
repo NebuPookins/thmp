@@ -5,6 +5,7 @@ $(function() {
 	var $songListTable = $('#songList tbody');
 	var $audioTag = $('#audioTag');
 	$songListTable.on('click', 'tr', function () {
+		console.log('Clicked');
 		var url = $(this).data('url');
 		$audioTag.empty();
 		$audioTag.append('<source src="'+url+'" />'); //TODO add "type"
