@@ -31,7 +31,7 @@
 
 	//Log all requests
 	app.use(function(req, res, next) {
-		//logger.trace('%s %s', req.method, req.url);
+		logger.trace('%s %s', req.method, req.url);
 		next();
 	});
 
@@ -49,8 +49,11 @@
 	});
 
 	app.get('/api/1/mp3/*', function(req, res) {
+		logger.trace('About to serve an mp3 file...');
 		var requestedPath = '/' + req.params[0];
+		logger.trace('Requesting mp3 file from DAO...');
 		config.modelDAO.findMediaFileByPath(requestedPath).then(function (results) {
+			logger.trace('DAO has returned (hopefully with mp3 file)...');
 			if (results) {
 				return res.sendfile(results.path);
 			} else {
