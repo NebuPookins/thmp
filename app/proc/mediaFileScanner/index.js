@@ -58,5 +58,9 @@
 		}
 	});
 
-	//TODO: Need to monitor child process, and when it dies, restart it.
+	childProcess.on('error', function (err) {
+		logger.warn('Child process error: %s', err.message);
+		console.log(err);
+		//TODO: Need to monitor child process, and when it dies, restart it.
+	});
 }());
