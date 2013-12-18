@@ -38,12 +38,12 @@
 	childProcess.on('message', function (msg) {
 		if (msg.code === commands.FOUND_FILE.code) {
 			MediaFile.fromPath(msg.path).then(function (mediaFile) {
-				return config.modelDAO.putMediaFile(mediaFile).fail(function (err) {
+				return config.getModelDAO().putMediaFile(mediaFile).fail(function (err) {
 					if (err instanceof Error) {
-						logger.warn('Error saving MediaFile %j: %s.', mediaFile.toJSON(), err.message);
-					} else {
-						logger.warn('Error saving MediaFile %j: %s.', mediaFile.toJSON(), err);
+						console.log(err);
+						err = err.message;
 					}
+					logger.warn('Error saving MediaFile %j: %s.', mediaFile.toJSON(), err);
 				});
 			});
 		} else if (msg.code === commands.SCAN_DONE) {

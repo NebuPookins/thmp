@@ -5,13 +5,13 @@
 
 	var _         = require('underscore');
 	var assert    = require('assert');
-	var log4js      = require('log4js');
+	var config    = require('../../config');
 	var MediaFile = require('./MediaFile');
 	var dblite    = require('dblite');
 	var q         = require('q');
 	var ModelDAO  = require('./ModelDAO.interface');
 
-	var logger = log4js.getLogger(__filename);
+	var logger = config.getLogger(__filename);
 
 	function SQLiteDAO(pathToDb) {
 		this.db = dblite(pathToDb);
@@ -58,6 +58,7 @@
 
 	function selectMediaFile(db, whereClause, queryParams) {
 		return q.promise(function (resolve, reject) {
+			logger.trace('About to perform SELECT query to find media file...');
 			db.query(
 				'SELECT path, mimeType, artists, title, album, year, tag FROM MediaFile ' + whereClause,
 				queryParams,
@@ -71,6 +72,7 @@
 					tag: JSON.parse
 				},
 				function (err, results) {
+					logger.trace('SELECT query to find media file has completed, converting to model objects...');
 					if (err) {
 						return reject(err);
 					}
@@ -88,6 +90,7 @@
 	};
 
 	SQLiteDAO.prototype.findMediaFileByPath = function(path) {
+		logger.trace('About to findMediaFileByPath...');
 		return selectMediaFile(
 			this.db, 'WHERE path = :path', {path: path}
 		).then(function(results) {

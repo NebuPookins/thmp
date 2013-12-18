@@ -5,6 +5,7 @@
 	var IS_PROD = process.env.NODE_ENV === 'production';
 	var IS_DEV = !IS_PROD;
 
+	var _         = require('underscore');
 	var _s        = require('underscore.string');
 	var assert    = require('assert');
 	var log4js    = require('log4js');
@@ -37,19 +38,23 @@
 	 * `modelDAO` is the DAO (Data Access Object) used to modify the model objects
 	 * and persist or retrieve them.
 	 */
-	if (IS_DEV) {
-		/*
-		 * For development, we use an SQLite3 store that writes to a file in the
-		 * root folder.
-		 */
-		var SQLiteDAO = require('../app/models/SQLiteDAO');
-		var DB_FILENAME = 'songDb.1.sqlite';
-		config.modelDAO = new SQLiteDAO(path.join(config.paths.root, DB_FILENAME));
+	if (IS_DEV) { 
+		config.getModelDAO = _.once(function() {
+			/*
+			 * For development, we use an SQLite3 store that writes to a file in the
+			 * root folder.
+			 */
+			var SQLiteDAO = require('../app/models/SQLiteDAO');
+			var DB_FILENAME = 'songDb.1.sqlite';
+			var retVal = new SQLiteDAO(path.join(config.paths.root, DB_FILENAME));
+			ModelDAO.assertIsImplementedBy(retVal);
+			return retVal;
+		})
 	} else {
 		assert.ok(IS_PROD);
 		throw new Error("TODO: Not implemented yet.");
 	}
-	ModelDAO.assertIsImplementedBy(config.modelDAO);
+	
 
 	config.getLogger = function(absolutePath) {
 		var relativePath = path.relative(config.paths.root, absolutePath);

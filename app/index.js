@@ -40,7 +40,7 @@
 	});
 
 	app.get('/api/1/mp3/', function(req, res) {
-		config.modelDAO.listMediaFile().then(function (results) {
+		config.getModelDAO().listMediaFile().then(function (results) {
 			var jsonResults = _.map(results, function (mediaFile) {
 				return mediaFile.toJSON();
 			});
@@ -52,7 +52,7 @@
 		logger.trace('About to serve an mp3 file...');
 		var requestedPath = '/' + req.params[0];
 		logger.trace('Requesting mp3 file from DAO...');
-		config.modelDAO.findMediaFileByPath(requestedPath).then(function (results) {
+		config.getModelDAO().findMediaFileByPath(requestedPath).then(function (results) {
 			logger.trace('DAO has returned (hopefully with mp3 file)...');
 			if (results) {
 				return res.sendfile(results.path);
