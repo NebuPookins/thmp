@@ -9,6 +9,7 @@
 	var MediaFile = require('./MediaFile');
 	var dblite    = require('dblite');
 	var q         = require('q');
+	var ModelDAO  = require('./ModelDAO.interface');
 
 	var logger = log4js.getLogger(__filename);
 
@@ -100,4 +101,5 @@
 		});
 	};
 	module.exports = SQLiteDAO;
+	ModelDAO.assertIsImplementedBy(SQLiteDAO.prototype);
 })();

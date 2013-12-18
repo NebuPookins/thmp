@@ -2,7 +2,7 @@
 (function () {
 	'use strict';
 
-	var MY_FILES = ['Gruntfile.js', 'app/**/*.js', 'public/**/*.js'];
+	var MY_FILES = ['Gruntfile.js', 'app/**/*.js', 'config/**/*.js', 'public/**/*.js'];
 
 	module.exports = function(grunt) {
 		grunt.initConfig({

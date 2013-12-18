@@ -106,24 +106,24 @@
 		'text/x-python',
 		'text/x-shellscript',
 		'text/x-tex',
+		'image/x-xpmi',
 	];
 
 	var _           = require('underscore');
 	var assert      = require('assert');
+	var config      = require('../../../config');
 	var fs          = require('fs');
-	var log4js      = require('log4js');
 	var mime        = require('mime-magic');
 	var MediaFile   = require('../../models/MediaFile');
 	var path        = require('path');
 	var q           = require('q');
-	var SQLiteDAO   = require('../../models/SQLiteDAO');
 
+	var childProcess = require('child_process').fork(
+		path.join(__dirname, './mediaFileScanner.proc'),
+		[]
+	);
 
-	var ROOT = path.join(__dirname, '../../..');
-	var logger = log4js.getLogger(path.relative(ROOT, __filename));
-	logger.setLevel(log4js.levels.INFO);
-	var DB_FILENAME = 'songDb.1.sqlite';
-	var sqliteDao = new SQLiteDAO(path.join(ROOT, DB_FILENAME));
+	var logger = config.getLogger(__filename);
 
 	/**
 	 * Returns a promise that, when resolved, means all the files in the specified
@@ -145,7 +145,7 @@
 					if (_.contains(MEDIA_FILE_MIME_TYPES, mimeType)) {
 						logger.info('Added %s.', nextEntry);
 						return MediaFile.fromPath(nextEntry).then(function (mediaFile) {
-							return sqliteDao.putMediaFile(mediaFile).fail(function (err) {
+							return config.modelDAO.putMediaFile(mediaFile).fail(function (err) {
 								if (err instanceof Error) {
 									console.log(err);
 								} else {
