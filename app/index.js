@@ -19,7 +19,7 @@
 
 	logger.info('thmp starting up...');
 
-	mediaFileScanner.addMediaFileToDB([getUserHome()]).then(function() {
+	mediaFileScanner.addMediaFileToDB(getUserHome()).then(function() {
 		logger.info('Finished scanning for media files.');
 	}).done();
 
