@@ -6,6 +6,7 @@
 		'application/ogg',
 		'application/vnd.rn-realmedia', //TODO: check this one
 		'application/x-shockwave-flash', //TODO: check this one
+		'audio/basic',
 		'audio/midi',
 		'audio/mp4',
 		'audio/mpeg',
@@ -65,11 +66,14 @@
 		'application/x-iso9660-image',
 		'application/x-java-applet',
 		'application/x-java-keystore',
+		'application/x-lha',
+		'application/x-lharc',
 		'application/x-ms-reader',
 		'application/x-object',
 		'application/x-pgp-keyring',
 		'application/x-rar',
 		'application/x-rpm',
+		'application/x-setupscript.', //yes, it ends with a period.
 		'application/x-sharedlib',
 		'application/x-tar',
 		'application/x-tex-tfm',
@@ -82,6 +86,7 @@
 		'image/svg+xml',
 		'image/tiff',
 		'image/vnd.adobe.photoshop',
+		'image/vnd.djvu',
 		'image/x-icon',
 		'image/x-ms-bmp',
 		'image/x-paintnet',
