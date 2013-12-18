@@ -3,3 +3,5 @@
 /npm-debug.log
 # Ignore DB file created by the app.
 /songDb.*.sqlite
+# Ignore file created by sublime
+/thmp.sublime-workspace
