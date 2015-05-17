@@ -29,6 +29,12 @@
 				overflow-y: auto;
 				overflow-x: hidden;
 			}
+			#songList li {
+				cursor: pointer;
+			}
+			#currentlyPlaying dt {
+				font-weight: bold;
+			}
 		</style>
 	</head>
 	<body>
@@ -51,14 +57,16 @@
 						content: [{
 							type: 'component',
 							componentName: 'mediaPlayer',
+							height: 30,
 						}, {
 							type: 'row',
 							content: [{
 								type: 'component',
 								componentName: 'songList',
+								width: 70,
 							},{
 								type: 'component',
-								componentName: 'testComponent',
+								componentName: 'currentlyPlaying',
 							}]
 						}]
 					}]
@@ -80,6 +88,14 @@
 						}
 						$video.attr('src', url);
 					});
+					$video.on('ended', function(e) {
+						var keys = Object.keys(songDB);
+						var randomKey = keys[Math.floor(Math.random() * keys.length)];
+						var selectedSong = songDB[randomKey];
+						for (var key in selectedSong) {
+							currentSong[key] = selectedSong[key];
+						}
+					});
 				});
 				myLayout.registerComponent('songList', function(container, componentState) {
 					var $root = $('<div id="songList">');
@@ -87,28 +103,45 @@
 					container.getElement().append($root);
 					$root.on('click', 'li', function(e) {
 						var $li = $(e.target);
-						currentSong['path'] = $li.data('path');
+						var selectedSong = songDB[$li.data('id')];
+						for (var key in selectedSong) {
+							currentSong[key] = selectedSong[key];
+						}
 					});
 					Object.observe(songDB, function() {
 						var $ul = $('<ul>');
 						var html = '<ul>';
 						for (var key in songDB) {
 							var $li = $('<li>');
-							$li.data('path', key);
-							$li.text(songDB[key]);
+							$li.data('id', key);
+							$li.text(songDB[key].path);
 							$ul.append($li);
 						}
-						$root.html('');
+						$root.empty();
 						$root.append($ul);
 					});
 				});
-				myLayout.registerComponent('testComponent', function(container, componentState) {
-					container.getElement().html( '<h2>' + componentState.label + '</h2>' );
+				myLayout.registerComponent('currentlyPlaying', function(container, componentState) {
+					var $root = $('<div id="currentlyPlaying">');
+					var $dl = $('<dl>');
+					$root.append($dl);
+					container.getElement().append($root);
+					Object.observe(currentSong, function() {
+						$dl.empty();
+						for (var key in currentSong) {
+							var $dt = $('<dt>');
+							$dt.text(key);
+							$dl.append($dt);
+							var $dd = $('<dd>');
+							$dd.text(currentSong[key]);
+							$dl.append($dd);
+						}
+					});
 				});
 				myLayout.init();
 				$.ajax('/api/1/songs/').done(function(data, textStatus, jqXHR) {
 					for (var key in data) {
-						songDB[key] = key;
+						songDB[key] = data[key];
 					}
 				});
 				$songList.on('click', 'li', function(e) {
