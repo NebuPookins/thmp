@@ -56,11 +56,13 @@ public class SongFileImpl implements SongFile {
 		return retVal;
 	}
 
+	private final static String MIMETYPE_MP3 = "audio/mpeg";
 	private static Optional<SongFileImpl> mp3From(Path path) {
 		try {
 			Mp3File mp3File = new Mp3File(path.toFile());
 			final SongFileImpl retVal = new SongFileImpl();
 			retVal.path = path.toString();
+			retVal.mimeType = MIMETYPE_MP3;
 			/*
 			 * Read all the data out of id3v1 first, then read the values out of
 			 * id3v2, letting the v2 values overwrite the v1 values.
@@ -89,7 +91,7 @@ public class SongFileImpl implements SongFile {
 				return Optional.empty();
 			}
 			switch (localMimeType) {
-			case "audio/mpeg":
+			case MIMETYPE_MP3:
 				return mp3From(path);
 				// TODO: Add metadata support for these formats.
 			case "application/vnd.adobe.flash.movie":
@@ -168,6 +170,7 @@ public class SongFileImpl implements SongFile {
 		case "application/msword":
 		case "application/msword-template":
 		case "application/octet-stream":
+		case "application/oxps":
 		case "application/pdf":
 		case "application/pkix-cert":
 		case "application/pkix-crl":
@@ -207,6 +210,7 @@ public class SongFileImpl implements SongFile {
 		case "application/x-m4":
 		case "application/x-magicpoint":
 		case "application/x-mobipocket-ebook":
+		case "application/x-mif":
 		case "application/x-ms-dos-executable":
 		case "application/x-ms-shortcut":
 		case "application/x-msdownload":

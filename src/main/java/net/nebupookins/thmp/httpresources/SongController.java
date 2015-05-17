@@ -85,10 +85,11 @@ public class SongController {
 		if (songPath == null) {
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
-		Optional<SongFile> maybeSong = db.getSong(songPath);
+		final Optional<SongFile> maybeSong = db.getSong(songPath);
 		if (!maybeSong.isPresent()) {
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
+		final SongFile song = maybeSong.get();
 		//Open file to make sure it exists.
 		FileInputStream fis;
 		try {
@@ -96,6 +97,10 @@ public class SongController {
 		} catch (FileNotFoundException e) {
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
-		return Response.ok(fis, maybeSong.get().getMimeType()).build();
+		String mimeType = song.getMimeType();
+		if (mimeType.isEmpty()) {
+			mimeType = MediaType.APPLICATION_OCTET_STREAM;
+		}
+		return Response.ok(fis, mimeType).build();
 	}
 }
