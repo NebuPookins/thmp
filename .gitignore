@@ -4,4 +4,7 @@
 /thmp.db
 /thmp.db.p
 /thmp.db.t
-
+# Ignore Eclipse files
+/.settings/
+/.classpath
+/.project
