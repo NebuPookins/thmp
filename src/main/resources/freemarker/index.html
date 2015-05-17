@@ -129,11 +129,18 @@
 					Object.observe(currentSong, function() {
 						$dl.empty();
 						for (var key in currentSong) {
+							if (currentSong[key] === null) {
+								continue;
+							}
 							var $dt = $('<dt>');
 							$dt.text(key);
 							$dl.append($dt);
 							var $dd = $('<dd>');
-							$dd.text(currentSong[key]);
+							if (typeof currentSong[key] === 'string') {
+								$dd.text(currentSong[key]);
+							} else {
+								$dd.text(JSON.stringify(currentSong[key]));
+							}
 							$dl.append($dd);
 						}
 					});

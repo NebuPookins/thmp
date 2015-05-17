@@ -95,6 +95,7 @@ public class SongFileImpl implements SongFile {
 				return mp3From(path);
 				// TODO: Add metadata support for these formats.
 			case "application/vnd.adobe.flash.movie":
+			case "audio/basic": // .au files.
 			case "audio/flac":
 			case "audio/midi":
 			case "audio/mp4":
