@@ -1,13 +1,11 @@
 package net.nebupookins.thmp;
 
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
 import net.nebupookins.thmp.model.SongFile;
-import net.nebupookins.thmp.model.SongFile.SongFileImpl;
 
 import org.mapdb.DB;
 import org.mapdb.HTreeMap;
@@ -31,16 +29,15 @@ public class LocalSongFileDB {
 		this.objectMapper = objectMapper;
 	}
 
-	public void addSongFile(Path nextPath) {
+	public void addSongFile(SongFile songFile) {
+		assert !songFile.getPath().isEmpty();
 		DB db = txMaker.makeTx();
 		try {
 			HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
-			SongFileImpl song = new SongFileImpl();
-			song.setPath(nextPath.toString());
 			Either<JsonProcessingException, String> songJson = objectMapper
-					.writeValueAsString(song);
+					.writeValueAsString(songFile);
 			if (songJson.isRight()) {
-				map.put(nextPath.toString(), songJson.right().value());
+				map.put(songFile.getPath(), songJson.right().value());
 			} else {
 				LOG.warn(
 						"Could not serialize song object; therefore did not add it to DB.",

@@ -15,9 +15,11 @@ import net.nebupookins.thmp.httpresources.SongController;
 
 import org.mapdb.DBMaker;
 import org.mapdb.TxMaker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 
 public class Thmp extends Application<ThmpConfig> {
@@ -27,7 +29,11 @@ public class Thmp extends Application<ThmpConfig> {
 
 	@Override
 	public void initialize(Bootstrap<ThmpConfig> bootstrap) {
-		bootstrap.getObjectMapper().registerModule(new MrBeanModule());
+		ObjectMapper objectMapper = bootstrap.getObjectMapper();
+		objectMapper.registerModule(new MrBeanModule());
+		objectMapper.registerModule(new Jdk8Module());
+		objectMapper.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
+		objectMapper.setVisibility(PropertyAccessor.GETTER, Visibility.PUBLIC_ONLY);
 		super.initialize(bootstrap);
 	}
 

@@ -3,7 +3,6 @@ package net.nebupookins.thmp.httpresources;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
@@ -17,6 +16,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
+import net.nebupookins.thmp.LocalSongFileDB;
+import net.nebupookins.thmp.SafeObjectMapper;
+import net.nebupookins.thmp.model.SongFile;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +28,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import fj.data.Either;
-import net.nebupookins.thmp.LocalSongFileDB;
-import net.nebupookins.thmp.SafeObjectMapper;
-import net.nebupookins.thmp.model.SongFile;
 
 @Path("/api/1/songs")
 public class SongController {
@@ -64,10 +64,11 @@ public class SongController {
 			generator.close();
 		};
 	}
-
+	
 	@GET
-	@Path("/binary")
-	public Response getFile(@QueryParam("songPath") String songPath) {
+	@Path("/metadata")
+	@Produces(MediaType.APPLICATION_JSON)
+	public SongFile getMetadata(@QueryParam("songPath") String songPath) {
 		if (songPath == null) {
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
@@ -75,12 +76,26 @@ public class SongController {
 		if (!song.isPresent()) {
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
+		return song.get();
+	}
+
+	@GET
+	@Path("/binary")
+	public Response getFile(@QueryParam("songPath") String songPath) {
+		if (songPath == null) {
+			throw new WebApplicationException(Status.NOT_FOUND);
+		}
+		Optional<SongFile> maybeSong = db.getSong(songPath);
+		if (!maybeSong.isPresent()) {
+			throw new WebApplicationException(Status.NOT_FOUND);
+		}
+		//Open file to make sure it exists.
 		FileInputStream fis;
 		try {
 			fis = new FileInputStream(new File(songPath));
 		} catch (FileNotFoundException e) {
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
-		return Response.ok(fis, MediaType.APPLICATION_OCTET_STREAM).build();
+		return Response.ok(fis, maybeSong.get().getMimeType()).build();
 	}
 }
