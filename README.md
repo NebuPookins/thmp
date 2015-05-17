@@ -25,14 +25,12 @@ it'll probably end up being GPL3.
 
 # How do I build it locally?
 
+    # Make sure you have maven installed; verify with `mvn -version`
     git clone https://github.com/NebuPookins/thmp.git
     cd thmp
-    npm install
-    npm start
-    # Load up http://localhost:3000/ in your browser
-    # Optional: Use set up grunt for jshint checking
-    npm install grunt-cli --global
-    grunt
+    mvn compile
+    mvn exec:java
+    # Load up http://localhost:8080/ in your browser
 
 # What's the official homepage?
 

@@ -1,0 +1,17 @@
+# Settings when running in "dev" (as opposed to prod)
+logging:
+  # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
+  level: ALL
+  # Logger-specific levels.
+  loggers:
+    "io.dropwizard": INFO
+    "javax.management.mbeanserver": INFO
+    "org.eclipse.jetty": INFO
+    "org.glassfish.jersey": INFO
+    "org.jvnet.hk2": INFO
+  appenders:
+    - type: console
+      threshold: ALL
+      target: stdout
+freemarkerTemplateDir: "src/main/resources/freemarker"
+devMode: true
