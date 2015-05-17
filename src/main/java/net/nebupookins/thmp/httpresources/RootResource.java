@@ -10,10 +10,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import net.nebupookins.thmp.LocalSongFileDB;
-
-import com.codahale.metrics.annotation.Timed;
-
 import freemarker.core.ParseException;
 import freemarker.template.Configuration;
 import freemarker.template.MalformedTemplateNameException;
@@ -31,8 +27,7 @@ public class RootResource {
 	}
 
 	@GET
-	@Timed
-	public String sayHello() throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException {
+	public String mainPage() throws TemplateNotFoundException, MalformedTemplateNameException, ParseException, IOException, TemplateException {
 		//TODO use https://dropwizard.github.io/dropwizard/manual/views.html#manual-views
 		Template template = freemarkerCfg.getTemplate("index.html");
 		Map<String, Object> freemarkerModel = new HashMap<>();

@@ -33,27 +33,24 @@ public class Thmp extends Application<ThmpConfig> {
 
 	@Override
 	public void run(ThmpConfig config, Environment env) throws Exception {
-		File freemarkerDir = new File(config.getFreemarkerTemplateDir());
+		final File freemarkerDir = new File(config.getFreemarkerTemplateDir());
 		if (!freemarkerDir.exists()) {
-			throw new IllegalStateException(String.format(
-					"Could not find freemarker directory: %s.",
+			throw new IllegalStateException(String.format("Could not find freemarker directory: %s.",
 					freemarkerDir.getAbsolutePath()));
 		}
-		Configuration freemarkerCfg = new Configuration(
-				Configuration.VERSION_2_3_22);
+		final Configuration freemarkerCfg = new Configuration(Configuration.VERSION_2_3_22);
 		freemarkerCfg.setDirectoryForTemplateLoading(freemarkerDir);
 		freemarkerCfg.setDefaultEncoding("UTF-8");
-		freemarkerCfg
-				.setTemplateExceptionHandler(config.isDevMode() ? TemplateExceptionHandler.HTML_DEBUG_HANDLER
-						: TemplateExceptionHandler.RETHROW_HANDLER);
+		freemarkerCfg.setTemplateExceptionHandler(config.isDevMode() ? TemplateExceptionHandler.HTML_DEBUG_HANDLER
+				: TemplateExceptionHandler.RETHROW_HANDLER);
 
-		TxMaker txMaker = DBMaker.newFileDB(new File("thmp.db")).closeOnJvmShutdown()
-				.checksumEnable().makeTxMaker();
-		LocalSongFileDB localSongDb = new LocalSongFileDB(txMaker, new SafeObjectMapper(env.getObjectMapper()));
+		final TxMaker txMaker = DBMaker.newFileDB(new File("thmp.db")).closeOnJvmShutdown().checksumEnable().makeTxMaker();
+		final SafeObjectMapper safeObjectMapper = new SafeObjectMapper(env.getObjectMapper());
+		final LocalSongFileDB localSongDb = new LocalSongFileDB(txMaker, safeObjectMapper);
 		env.healthChecks().register(MapDbHealthCheck.NAME, new MapDbHealthCheck(txMaker));
 		env.jersey().register(new RootResource(freemarkerCfg));
-		env.jersey().register(new SongController(localSongDb));
-		
+		env.jersey().register(new SongController(localSongDb, safeObjectMapper));
+
 		ExecutorService es = env.lifecycle().executorService("worker").build();
 		es.execute(new ScanHardriveForMusic(localSongDb));
 	}
