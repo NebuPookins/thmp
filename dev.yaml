@@ -13,5 +13,13 @@ logging:
     - type: console
       threshold: ALL
       target: stdout
+server:
+  applicationConnectors:
+    -
+      type: http
+      # The hostname of the interface to which the HTTP server socket
+      # will be bound. If omitted, the socket will listen on all
+      # interfaces.
+      bindHost: localhost
 freemarkerTemplateDir: "src/main/resources/freemarker"
 devMode: true
