@@ -32,6 +32,7 @@ public class ScanHardriveForMusic implements Runnable {
 
 	@Override
 	public void run() {
+		LOG.info(String.format("Scanning filesystems for music files..."));
 		FileSystem defaultFS = FileSystems.getDefault();
 		for (Path root : defaultFS.getRootDirectories()) {
 			directoriesToScan.add(root);
@@ -114,6 +115,7 @@ public class ScanHardriveForMusic implements Runnable {
 		case "application/x-compressed-tar":
 		case "application/x-genesis-rom":
 		case "application/x-lha":
+		case "application/x-nintendo-ds-rom":
 		case "application/x-par2":
 		case "application/x-rar":
 		case "application/x-raw-disk-image":
@@ -130,10 +132,12 @@ public class ScanHardriveForMusic implements Runnable {
 		case "application/octet-stream":
 		case "application/pdf":
 		case "application/pkix-cert":
+		case "application/pkix-crl":
 		case "application/postscript":
 		case "application/rdf+xml":
 		case "application/rtf":
 		case "application/rss+xml":
+		case "application/smil+xml":
 		case "application/sql":
 		case "application/vnd.iccprofile":
 		case "application/vnd.tcpdump.pcap":
@@ -189,6 +193,7 @@ public class ScanHardriveForMusic implements Runnable {
 		case "application/x-subrip":
 		case "application/x-tex-pk":
 		case "application/x-tgif":
+		case "application/x-theme":
 		case "application/x-trash":
 		case "application/x-troff-man":
 		case "application/x-wais-source":
