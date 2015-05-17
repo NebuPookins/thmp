@@ -21,7 +21,7 @@ public class ScanHardriveForMusic implements Runnable {
 	private final static String[] NON_MUSIC_MIME_PREFIXES = new String[] {
 			"application/pgp-", "application/vnd.oasis.",
 			"application/vnd.openxmlformats", "application/x-font-",
-			"application/x-virtualbox-", "application/x-wine-", "image/", "text/" };
+			"application/x-virtualbox-", "application/x-wine-", "application/xml-", "image/", "text/" };
 	private final Random rng = new Random();
 	private final LocalSongFileDB db;
 	private final List<Path> directoriesToScan = new ArrayList<>();
@@ -127,6 +127,8 @@ public class ScanHardriveForMusic implements Runnable {
 		case "application/json":
 		case "application/epub+zip":
 		case "application/font-woff":
+		case "application/nemo-action":
+		case "application/mbox":
 		case "application/msword":
 		case "application/msword-template":
 		case "application/octet-stream":
@@ -140,11 +142,10 @@ public class ScanHardriveForMusic implements Runnable {
 		case "application/smil+xml":
 		case "application/sql":
 		case "application/vnd.iccprofile":
+		case "application/vnd.sun.xml.writer.template":
 		case "application/vnd.tcpdump.pcap":
 		case "application/vnd.visio":
 		case "application/winhlp":
-		case "application/xml-dtd":
-		case "application/xslt+xml":
 		case "application/x-aportisdoc":
 		case "application/x-asp":
 		case "application/x-awk":
@@ -168,6 +169,7 @@ public class ScanHardriveForMusic implements Runnable {
 		case "application/x-java-archive":
 		case "application/x-keepass2":
 		case "application/x-m4":
+		case "application/x-magicpoint":
 		case "application/x-mobipocket-ebook":
 		case "application/x-ms-dos-executable":
 		case "application/x-ms-shortcut":
@@ -199,7 +201,9 @@ public class ScanHardriveForMusic implements Runnable {
 		case "application/x-wais-source":
 		case "application/x-x509-ca-cert":
 		case "application/x-yaml":
+		case "application/xhtml+xml":
 		case "application/xml":
+		case "application/xslt+xml":
 		case "message/rfc822":
 			return false;
 		default:
