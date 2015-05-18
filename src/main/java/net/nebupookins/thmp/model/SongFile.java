@@ -7,13 +7,12 @@ import java.util.Optional;
 public interface SongFile {
 
 	public String getPath();
-	
 
 	public String getMimeType();
-	
 
 	public Optional<String> getArtist();
-
+	
+	public Optional<String> getTitle();
 
 	public Map<String, List<String>> getExtendedMetadata();
 }

@@ -4,7 +4,6 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateExceptionHandler;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.servlets.assets.AssetServlet;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 

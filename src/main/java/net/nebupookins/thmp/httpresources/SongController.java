@@ -3,6 +3,7 @@ package net.nebupookins.thmp.httpresources;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.nio.file.Paths;
 import java.util.Map.Entry;
 import java.util.Optional;
 
@@ -19,7 +20,9 @@ import javax.ws.rs.core.StreamingOutput;
 import net.nebupookins.thmp.LocalSongFileDB;
 import net.nebupookins.thmp.SafeObjectMapper;
 import net.nebupookins.thmp.model.SongFile;
+import net.nebupookins.thmp.model.SongFileImpl;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,43 +67,52 @@ public class SongController {
 			generator.close();
 		};
 	}
-	
+
 	@GET
 	@Path("/metadata")
 	@Produces(MediaType.APPLICATION_JSON)
-	public SongFile getMetadata(@QueryParam("songPath") String songPath) {
-		if (songPath == null) {
-			throw new WebApplicationException(Status.NOT_FOUND);
-		}
-		Optional<SongFile> song = db.getSong(songPath);
-		if (!song.isPresent()) {
-			throw new WebApplicationException(Status.NOT_FOUND);
-		}
-		return song.get();
+	public SongFile getMetadata(@QueryParam("songPath") String nullableSongPath) {
+		return Optional.ofNullable(nullableSongPath)
+				// Check that song was already in the DB (don't allow them to ask for
+				// metadata for arbitrary files).
+				.flatMap(songPath -> db.getSong(songPath))
+				// If it was already in the DB, refresh the metadata.
+				.flatMap(song -> refreshMetadata(Paths.get(song.getPath())))
+				.orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
 	}
 
 	@GET
 	@Path("/binary")
-	public Response getFile(@QueryParam("songPath") String songPath) {
-		if (songPath == null) {
-			throw new WebApplicationException(Status.NOT_FOUND);
+	public Response getFile(@QueryParam("songPath") String nullableSongPath) {
+		return Optional.ofNullable(nullableSongPath)
+				// Check that song was already in the DB (don't allow them to ask for arbitrary files).
+				.flatMap(songPath -> db.getSong(songPath))
+				// If it was already in the DB, refresh the metadata.
+				.flatMap(song -> refreshMetadata(Paths.get(song.getPath())))
+				//Attempt to open a FileInputStream on the song file.
+				.flatMap(song -> {
+					FileInputStream fis;
+					try {
+						fis = new FileInputStream(new File(song.getPath()));
+						return Optional.of(Pair.of(song, fis));
+					} catch (FileNotFoundException e) {
+						return Optional.empty();
+					}
+				})
+				.map(pairSongFis -> {
+					String mimeType = pairSongFis.getLeft().getMimeType();
+					if (mimeType.isEmpty()) {
+						mimeType = MediaType.APPLICATION_OCTET_STREAM;
+					}
+					return Response.ok(pairSongFis.getRight(), mimeType).build();
+				}).orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
+	}
+
+	private Optional<SongFileImpl> refreshMetadata(java.nio.file.Path path) {
+		final Optional<SongFileImpl> reloadedSong = SongFileImpl.fromPath(path);
+		if (reloadedSong.isPresent()) {
+			db.addSongFile(reloadedSong.get());
 		}
-		final Optional<SongFile> maybeSong = db.getSong(songPath);
-		if (!maybeSong.isPresent()) {
-			throw new WebApplicationException(Status.NOT_FOUND);
-		}
-		final SongFile song = maybeSong.get();
-		//Open file to make sure it exists.
-		FileInputStream fis;
-		try {
-			fis = new FileInputStream(new File(songPath));
-		} catch (FileNotFoundException e) {
-			throw new WebApplicationException(Status.NOT_FOUND);
-		}
-		String mimeType = song.getMimeType();
-		if (mimeType.isEmpty()) {
-			mimeType = MediaType.APPLICATION_OCTET_STREAM;
-		}
-		return Response.ok(fis, mimeType).build();
+		return reloadedSong;
 	}
 }

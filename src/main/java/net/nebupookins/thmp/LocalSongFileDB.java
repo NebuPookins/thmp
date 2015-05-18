@@ -10,6 +10,7 @@ import net.nebupookins.thmp.model.SongFile;
 import org.mapdb.DB;
 import org.mapdb.HTreeMap;
 import org.mapdb.TxMaker;
+import org.mapdb.TxRollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import fj.data.Either;
 
 public class LocalSongFileDB {
-	private final static Logger LOG = LoggerFactory
-			.getLogger(LocalSongFileDB.class);
+	private final static Logger LOG = LoggerFactory.getLogger(LocalSongFileDB.class);
 	public final static String COLLECTION_NAME = "LocalSongFile";
 	private final TxMaker txMaker;
 	private final SafeObjectMapper objectMapper;
@@ -31,21 +31,31 @@ public class LocalSongFileDB {
 
 	public void addSongFile(SongFile songFile) {
 		assert !songFile.getPath().isEmpty();
-		DB db = txMaker.makeTx();
-		try {
-			HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
-			Either<JsonProcessingException, String> songJson = objectMapper
-					.writeValueAsString(songFile);
-			if (songJson.isRight()) {
-				map.put(songFile.getPath(), songJson.right().value());
-			} else {
-				LOG.warn(
-						"Could not serialize song object; therefore did not add it to DB.",
-						songJson.left().value());
+		Either<JsonProcessingException, String> songJson = objectMapper.writeValueAsString(songFile);
+		if (songJson.isRight()) {
+			retryAddingSong(songFile, songJson.right().value());
+		} else {
+			LOG.warn("Could not serialize song object; therefore did not add it to DB.", songJson.left().value());
+		}
+	}
+
+	private synchronized void retryAddingSong(SongFile songFile, String songJson) {
+		int retryNumber = 0;
+		while (true) {
+			DB db = txMaker.makeTx();
+			try {
+				HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
+				map.put(songFile.getPath(), songJson);
+				db.commit();
+				return;
+			} catch (TxRollbackException e) {
+				retryNumber++;
+				if (retryNumber > 10) {
+					throw new RuntimeException("Could not save data even after retrying many times.", e);
+				}
+			} finally {
+				db.close();
 			}
-		} finally {
-			db.commit();
-			db.close();
 		}
 	}
 
@@ -55,13 +65,14 @@ public class LocalSongFileDB {
 		try {
 			HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
 			for (Entry<String, String> songEntry : map.entrySet()) {
-				Either<JsonProcessingException, SongFile> songObj = objectMapper
-						.readValue(songEntry.getValue(), SongFile.class);
+				Either<JsonProcessingException, SongFile> songObj =
+						objectMapper.readValue(songEntry.getValue(), SongFile.class);
 				if (songObj.isRight()) {
 					retVal.put(songEntry.getKey(), songObj.right().value());
 				} else {
-					LOG.warn(String.format("Could not deserialize song %s. Json was %s.",
-							songEntry.getKey(), songEntry.getValue()), songObj.left().value());
+					LOG.warn(
+							String.format("Could not deserialize song %s. Json was %s.", songEntry.getKey(), songEntry.getValue()),
+							songObj.left().value());
 					map.remove(songEntry.getKey());
 				}
 				if (retVal.size() > 10000) {
@@ -82,13 +93,12 @@ public class LocalSongFileDB {
 			if (songJson == null) {
 				return Optional.empty();
 			}
-			Either<JsonProcessingException, SongFile> songObj = objectMapper
-					.readValue(songJson, SongFile.class);
+			Either<JsonProcessingException, SongFile> songObj = objectMapper.readValue(songJson, SongFile.class);
 			if (songObj.isRight()) {
 				return Optional.of(songObj.right().value());
 			} else {
-				LOG.warn(String.format("Could not deserialize song %s. Json was %s.",
-						songPath, songJson), songObj.left().value());
+				LOG.warn(String.format("Could not deserialize song %s. Json was %s.", songPath, songJson), songObj.left()
+						.value());
 				map.remove(songPath);
 				return Optional.empty();
 			}

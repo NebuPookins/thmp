@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class ScanHardriveForMusic implements Runnable {
 	private final static Logger LOG = LoggerFactory.getLogger(ScanHardriveForMusic.class);
 	private final static String[] WEIRD_DIRECTORY_ROOTS = new String[] { "/dev", "/proc", "/run" };
-	
+
 	private final Random rng = new Random();
 	private final LocalSongFileDB db;
 	private final List<Path> directoriesToScan = new ArrayList<>();
@@ -67,6 +67,4 @@ public class ScanHardriveForMusic implements Runnable {
 			}
 		}
 	}
-
-
 }

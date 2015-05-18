@@ -105,17 +105,11 @@
 					var $root = $('<div id="songList">');
 					$root.text("Loading song list...")
 					container.getElement().append($root);
-					$root.on('click', 'li', function(e) {
-						var $li = $(e.target);
-						var selectedSong = songDB[$li.data('id')];
-						for (var key in selectedSong) {
-							currentSong[key] = selectedSong[key];
-						}
-					});
 					var columns = [
 						{id: 'path', name: "Path", field: 'path', width: 80, sortable: true},
 						{id: 'mimeType', name: "Mime Type", field: 'mimeType', width: 150, sortable: true},
 						{id: 'artist', name: "Artist", field: 'artist', width: 200, sortable: true},
+						{id: 'title', name: "Title", field: 'title', width: 200, sortable: true},
 					];
 					var options = {
 						enableCellNavigation: true,
@@ -127,9 +121,23 @@
 							slickGrid = new Slick.Grid('#songList', songDB, columns, options);
 							slickGrid.onClick.subscribe(function(e, args) {
 								var selectedSong = songDB[args.row];
+								var url = '/api/1/songs/metadata?songPath=' + encodeURIComponent(selectedSong['path']);
 								for (var key in selectedSong) {
 									currentSong[key] = selectedSong[key];
 								}
+								$.ajax(url).done(function(data, textStatus, jqXHR) {
+									/* We want to re-read the metadata and update the entry, but
+									 * since this AJAX call was asynchronous, we have to be
+									 * careful and make sure the songDB wasn't mutated (e.g.
+									 * sorted) before we update the entry.
+									 */
+									if (songDB[args.row].path == data.path) {
+										songDB[args.row] = data;
+										slickGrid.invalidate();
+									} else {
+										console.log("Couldn't update; song DB was mutated.");
+									}
+								});
 							})
 							slickGrid.onSort.subscribe(function(e, args) {
 								var sortField = args.sortCol.field;
@@ -186,12 +194,6 @@
 						songDB.push(data[key]);
 					}
 				});
-				$songList.on('click', 'li', function(e) {
-					var $li = $(e.target);
-					var url = '/api/1/song?songPath=' + encodeURIComponent($li.data('path'));
-					$audioPlayer.attr('src', url);
-				});
-				
 			});
 		</script>
 	</body>

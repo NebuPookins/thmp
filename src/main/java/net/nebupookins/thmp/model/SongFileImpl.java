@@ -28,6 +28,8 @@ public class SongFileImpl implements SongFile {
 	private Map<String, List<String>> extendedMetadata = new HashMap<>();
 
 	private Optional<String> artist = Optional.empty();
+	
+	private Optional<String> title  = Optional.empty();
 
 	@Override
 	public String getPath() {
@@ -42,6 +44,11 @@ public class SongFileImpl implements SongFile {
 	@Override
 	public Optional<String> getArtist() {
 		return this.artist;
+	}
+	
+	@Override
+	public Optional<String> getTitle() {
+		return this.title;
 	}
 
 	@Override
@@ -69,6 +76,7 @@ public class SongFileImpl implements SongFile {
 			 */
 			if (mp3File.hasId3v1Tag()) {
 				retVal.artist = Optional.ofNullable(mp3File.getId3v1Tag().getArtist());
+				retVal.title = Optional.ofNullable(mp3File.getId3v1Tag().getTitle());
 			}
 			if (mp3File.hasId3v2Tag()) {
 				retVal.artist = Optional.ofNullable(mp3File.getId3v2Tag().getArtist());
