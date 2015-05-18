@@ -3,6 +3,8 @@ package net.nebupookins.thmp;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateExceptionHandler;
 import io.dropwizard.Application;
+import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.servlets.assets.AssetServlet;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 
@@ -34,7 +36,8 @@ public class Thmp extends Application<ThmpConfig> {
 		objectMapper.registerModule(new Jdk8Module());
 		objectMapper.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
 		objectMapper.setVisibility(PropertyAccessor.GETTER, Visibility.PUBLIC_ONLY);
-		super.initialize(bootstrap);
+		
+		bootstrap.addBundle(new AssetsBundle("/vendor", "/vendor"));
 	}
 
 	@Override

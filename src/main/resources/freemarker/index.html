@@ -9,8 +9,13 @@
 		</style>
 		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 		<script type="text/javascript" src="https://golden-layout.com/files/latest/js/goldenlayout.min.js"></script>
+		<script type="text/javascript" src="/vendor/SlickGrid/lib/jquery.event.drag-2.2.js"></script>
+		<script type="text/javascript" src="/vendor/SlickGrid/slick.core.js"></script>
+		<script type="text/javascript" src="/vendor/SlickGrid/slick.grid.js"></script>
 		<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" />
 		<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-dark-theme.css" />
+		<link type="text/css" rel="stylesheet" href="/vendor/SlickGrid/slick.grid.css" />
+		<link type="text/css" rel="stylesheet" href="/vendor/SlickGrid/css/smoothness/jquery-ui-1.8.16.custom.css" />
 		<style type="text/css">
 			.lm_content {
 				color: white;
@@ -43,7 +48,7 @@
 				'use strict';
 				var $songList = $('#songList');
 				var $audioPlayer = $('#audioPlayer');
-				var songDB = {};
+				var songDB = [];
 				var currentSong = {
 					path: null
 				};
@@ -89,8 +94,7 @@
 						$video.attr('src', url);
 					});
 					$video.on('ended', function(e) {
-						var keys = Object.keys(songDB);
-						var randomKey = keys[Math.floor(Math.random() * keys.length)];
+						var randomKey = Math.floor(Math.random() * songDB.length);
 						var selectedSong = songDB[randomKey];
 						for (var key in selectedSong) {
 							currentSong[key] = selectedSong[key];
@@ -108,17 +112,47 @@
 							currentSong[key] = selectedSong[key];
 						}
 					});
+					var columns = [
+						{id: 'path', name: "Path", field: 'path', width: 80, sortable: true},
+						{id: 'mimeType', name: "Mime Type", field: 'mimeType', width: 150, sortable: true},
+						{id: 'artist', name: "Artist", field: 'artist', width: 200, sortable: true},
+					];
+					var options = {
+						enableCellNavigation: true,
+						enableColumnReorder: false,//TODO
+					};
+					var slickGrid;
 					Object.observe(songDB, function() {
-						var $ul = $('<ul>');
-						var html = '<ul>';
-						for (var key in songDB) {
-							var $li = $('<li>');
-							$li.data('id', key);
-							$li.text(songDB[key].path);
-							$ul.append($li);
+						if (slickGrid == null) {
+							slickGrid = new Slick.Grid('#songList', songDB, columns, options);
+							slickGrid.onClick.subscribe(function(e, args) {
+								var selectedSong = songDB[args.row];
+								for (var key in selectedSong) {
+									currentSong[key] = selectedSong[key];
+								}
+							})
+							slickGrid.onSort.subscribe(function(e, args) {
+								var sortField = args.sortCol.field;
+								songDB.sort(function(a, b) {
+									if (sortField === 'artist') {
+										if (a == null) {
+											a = "";
+										}
+										if (b == null) {
+											b = "";
+										}
+									}
+									var result =
+										a[sortField] > b[sortField] ? 1 :
+										a[sortField] < b[sortField] ? - 1:
+										0;
+									result = args.sortAsc ? result : -result;
+									return result;
+								});
+								slickGrid.invalidate();
+							});
 						}
-						$root.empty();
-						$root.append($ul);
+						slickGrid.invalidate();
 					});
 				});
 				myLayout.registerComponent('currentlyPlaying', function(container, componentState) {
@@ -147,14 +181,14 @@
 				});
 				myLayout.init();
 				$.ajax('/api/1/songs/').done(function(data, textStatus, jqXHR) {
+					songDB.length = 0;
 					for (var key in data) {
-						songDB[key] = data[key];
+						songDB.push(data[key]);
 					}
 				});
 				$songList.on('click', 'li', function(e) {
 					var $li = $(e.target);
 					var url = '/api/1/song?songPath=' + encodeURIComponent($li.data('path'));
-					console.log(url);
 					$audioPlayer.attr('src', url);
 				});
 				
