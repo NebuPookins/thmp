@@ -1,7 +1,7 @@
 package net.nebupookins.thmp;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 
@@ -45,7 +45,7 @@ public class LocalSongFileDB {
 			DB db = txMaker.makeTx();
 			try {
 				HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
-				map.put(songFile.getPath(), songJson);
+				map.put(songFile.getSha512(), songJson);
 				db.commit();
 				return;
 			} catch (TxRollbackException e) {
@@ -59,16 +59,16 @@ public class LocalSongFileDB {
 		}
 	}
 
-	public Map<String, SongFile> getSongs() {
-		Map<String, SongFile> retVal = new HashMap<>();
-		DB db = txMaker.makeTx();
+	public List<SongFile> getSongs() {
+		final DB db = txMaker.makeTx();
 		try {
-			HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
+			final HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
+			final List<SongFile> retVal = new ArrayList<>(map.size());
 			for (Entry<String, String> songEntry : map.entrySet()) {
-				Either<JsonProcessingException, SongFile> songObj =
+				final Either<JsonProcessingException, SongFile> songObj =
 						objectMapper.readValue(songEntry.getValue(), SongFile.class);
 				if (songObj.isRight()) {
-					retVal.put(songEntry.getKey(), songObj.right().value());
+					retVal.add(songObj.right().value());
 				} else {
 					LOG.warn(
 							String.format("Could not deserialize song %s. Json was %s.", songEntry.getKey(), songEntry.getValue()),
@@ -85,11 +85,11 @@ public class LocalSongFileDB {
 		}
 	}
 
-	public Optional<SongFile> getSong(String songPath) {
+	public Optional<SongFile> getSong(String key) {
 		DB db = txMaker.makeTx();
 		try {
 			HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
-			String songJson = map.get(songPath);
+			String songJson = map.get(key);
 			if (songJson == null) {
 				return Optional.empty();
 			}
@@ -97,9 +97,9 @@ public class LocalSongFileDB {
 			if (songObj.isRight()) {
 				return Optional.of(songObj.right().value());
 			} else {
-				LOG.warn(String.format("Could not deserialize song %s. Json was %s.", songPath, songJson), songObj.left()
+				LOG.warn(String.format("Could not deserialize song for key %s. Json was %s.", key, songJson), songObj.left()
 						.value());
-				map.remove(songPath);
+				map.remove(key);
 				return Optional.empty();
 			}
 		} finally {

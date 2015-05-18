@@ -89,7 +89,7 @@
 							'localhost' === window.location.hostname) {
 							url = 'file://' + encodeURI(currentSong['path']);
 						} else {
-							url = '/api/1/songs/binary?songPath=' + encodeURIComponent(currentSong['path']);
+							url = '/api/1/songs/binary?id=' + currentSong['sha512'];
 						}
 						$video.attr('src', url);
 					});
@@ -121,7 +121,7 @@
 							slickGrid = new Slick.Grid('#songList', songDB, columns, options);
 							slickGrid.onClick.subscribe(function(e, args) {
 								var selectedSong = songDB[args.row];
-								var url = '/api/1/songs/metadata?songPath=' + encodeURIComponent(selectedSong['path']);
+								var url = '/api/1/songs/metadata?id=' + selectedSong['sha512'];
 								for (var key in selectedSong) {
 									currentSong[key] = selectedSong[key];
 								}

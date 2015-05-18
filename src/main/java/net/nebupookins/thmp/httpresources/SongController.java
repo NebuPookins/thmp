@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
-import java.util.Map.Entry;
 import java.util.Optional;
 
 import javax.ws.rs.GET;
@@ -50,19 +49,16 @@ public class SongController {
 	public StreamingOutput getSongList() {
 		return output -> {
 			JsonGenerator generator = factory.createGenerator(output);
-			generator.writeStartObject();
-			for (Entry<String, SongFile> songEntry : db.getSongs().entrySet()) {
-				Either<JsonProcessingException, String> songJson = objectMapper.writeValueAsString(songEntry.getValue());
+			generator.writeStartArray();
+			for (SongFile song : db.getSongs()) {
+				Either<JsonProcessingException, String> songJson = objectMapper.writeValueAsString(song);
 				if (songJson.isRight()) {
-					generator.writeFieldName(songEntry.getKey());
 					generator.writeRawValue(songJson.right().value());
 				} else {
-					LOG.warn(
-							String.format("Could not deserialize json for song %s. JSON was: %s", songEntry.getKey(),
-									songEntry.getValue()), songJson.left().value());
+					LOG.warn(String.format("Could not serialize json for song %s",song), songJson.left().value());
 				}
 			}
-			generator.writeEndObject();
+			generator.writeEndArray();
 			generator.flush();
 			generator.close();
 		};
@@ -71,11 +67,11 @@ public class SongController {
 	@GET
 	@Path("/metadata")
 	@Produces(MediaType.APPLICATION_JSON)
-	public SongFile getMetadata(@QueryParam("songPath") String nullableSongPath) {
-		return Optional.ofNullable(nullableSongPath)
+	public SongFile getMetadata(@QueryParam("id") String nullableId) {
+		return Optional.ofNullable(nullableId)
 				// Check that song was already in the DB (don't allow them to ask for
 				// metadata for arbitrary files).
-				.flatMap(songPath -> db.getSong(songPath))
+				.flatMap(id -> db.getSong(id))
 				// If it was already in the DB, refresh the metadata.
 				.flatMap(song -> refreshMetadata(Paths.get(song.getPath())))
 				.orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
@@ -83,10 +79,10 @@ public class SongController {
 
 	@GET
 	@Path("/binary")
-	public Response getFile(@QueryParam("songPath") String nullableSongPath) {
-		return Optional.ofNullable(nullableSongPath)
+	public Response getFile(@QueryParam("id") String nullableId) {
+		return Optional.ofNullable(nullableId)
 				// Check that song was already in the DB (don't allow them to ask for arbitrary files).
-				.flatMap(songPath -> db.getSong(songPath))
+				.flatMap(id -> db.getSong(id))
 				// If it was already in the DB, refresh the metadata.
 				.flatMap(song -> refreshMetadata(Paths.get(song.getPath())))
 				//Attempt to open a FileInputStream on the song file.
