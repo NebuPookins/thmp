@@ -186,12 +186,16 @@
 					});
 				});
 				myLayout.init();
-				$.ajax('/api/1/songs/').done(function(data, textStatus, jqXHR) {
-					songDB.length = 0;
-					for (var key in data) {
-						songDB.push(data[key]);
-					}
-				});
+				function refreshSongList() {
+					$.ajax('/api/1/songs/').done(function(data, textStatus, jqXHR) {
+						songDB.length = 0;
+						for (var key in data) {
+							songDB.push(data[key]);
+						}
+						window.setTimeout(refreshSongList, 10000);
+					});
+				}
+				refreshSongList();
 			});
 		</script>
 	</body>
