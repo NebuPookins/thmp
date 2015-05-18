@@ -1,5 +1,6 @@
 package net.nebupookins.thmp.model;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -7,10 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mpatric.mp3agic.ID3v1;
+import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.InvalidDataException;
 import com.mpatric.mp3agic.Mp3File;
 import com.mpatric.mp3agic.UnsupportedTagException;
@@ -22,6 +28,8 @@ public class SongFileImpl implements SongFile {
 			"application/xml-", "image/", "text/" };
 
 	private String path = "";
+	
+	private String sha512 = "";
 
 	private String mimeType = "";
 
@@ -30,10 +38,22 @@ public class SongFileImpl implements SongFile {
 	private Optional<String> artist = Optional.empty();
 	
 	private Optional<String> title  = Optional.empty();
+	
+	public SongFileImpl validate() {
+		Validate.notBlank(path);
+		Validate.notBlank(sha512);
+		Validate.notBlank(mimeType);
+		return this;
+	}
 
 	@Override
 	public String getPath() {
 		return this.path;
+	}
+	
+	@Override
+	public String getSha512() {
+		return this.sha512;
 	}
 
 	@Override
@@ -56,40 +76,55 @@ public class SongFileImpl implements SongFile {
 		return extendedMetadata;
 	}
 
-	private static SongFileImpl genericMediaFrom(Path path, String mimeType) {
+	private static Optional<SongFileImpl> genericMediaFrom(Path path, String mimeType) {
 		final SongFileImpl retVal = new SongFileImpl();
 		retVal.path = path.toString();
 		retVal.mimeType = mimeType;
-		return retVal;
+		try (FileInputStream fis = new FileInputStream(path.toFile())) {
+			retVal.sha512 = DigestUtils.sha512Hex(fis);
+		} catch (IOException e) {
+			LOG.info(String.format("Could not read file %s.", path), e);
+			return Optional.empty();
+		}
+		return Optional.of(retVal);
+	}
+	
+	private static Optional<String> max(Optional<String> a, Optional<String> b) {
+		if (a.isPresent()) {
+			if (b.isPresent()) {
+				return Optional.of(a.get().length() > b.get().length() ? a.get() : b.get());
+			} else {
+				return a;
+			}
+		} else {
+			return b;
+		}
+	}
+	
+	private static Optional<String> max(Optional<ID3v1> a, Optional<ID3v2> b, Function<? super ID3v1, String> f) {
+		return max(a.map(t -> f.apply(t)), b.map(t -> f.apply(t)));
 	}
 
 	private final static String MIMETYPE_MP3 = "audio/mpeg";
+
 	private static Optional<SongFileImpl> mp3From(Path path) {
-		try {
-			Mp3File mp3File = new Mp3File(path.toFile());
-			final SongFileImpl retVal = new SongFileImpl();
-			retVal.path = path.toString();
-			retVal.mimeType = MIMETYPE_MP3;
-			/*
-			 * Read all the data out of id3v1 first, then read the values out of
-			 * id3v2, letting the v2 values overwrite the v1 values.
-			 */
-			if (mp3File.hasId3v1Tag()) {
-				retVal.artist = Optional.ofNullable(mp3File.getId3v1Tag().getArtist());
-				retVal.title = Optional.ofNullable(mp3File.getId3v1Tag().getTitle());
+		return genericMediaFrom(path, MIMETYPE_MP3).flatMap(retVal -> {
+			try {
+				Mp3File mp3File = new Mp3File(path.toFile());
+				Optional<ID3v1> maybeId3v1 = Optional.ofNullable(mp3File.getId3v1Tag());
+				Optional<ID3v2> maybeId3v2 = Optional.ofNullable(mp3File.getId3v2Tag());
+				retVal.artist = max(maybeId3v1, maybeId3v2, t -> t.getArtist());
+				retVal.title = max(maybeId3v1, maybeId3v2, t -> t.getTitle());
+				// TODO copy other fields.
+				return Optional.of(retVal);
+			} catch (UnsupportedTagException | InvalidDataException e) {
+				LOG.debug(String.format("Could not read mp3 metadata for %s.", path), e);
+				return Optional.empty();
+			} catch (IOException e) {
+				LOG.warn(String.format("Error reading ID3 file %s.", path), e);
+				return Optional.empty();
 			}
-			if (mp3File.hasId3v2Tag()) {
-				retVal.artist = Optional.ofNullable(mp3File.getId3v2Tag().getArtist());
-			}
-			//TODO copy other fields.
-			return Optional.of(retVal);
-		} catch (UnsupportedTagException | InvalidDataException e) {
-			LOG.debug(String.format("Could not read mp3 metadata for %s.", path), e);
-			return Optional.empty();
-		} catch (IOException e) {
-			LOG.warn(String.format("Error reading ID3 file %s.", path), e);
-			return Optional.empty();
-		}
+		});
 	}
 
 	public static Optional<SongFileImpl> fromPath(Path path) {
@@ -100,7 +135,7 @@ public class SongFileImpl implements SongFile {
 			}
 			switch (localMimeType) {
 			case MIMETYPE_MP3:
-				return mp3From(path);
+				return mp3From(path).map(song -> song.validate());
 				// TODO: Add metadata support for these formats.
 			case "application/vnd.adobe.flash.movie":
 			case "audio/basic": // .au files.
@@ -124,7 +159,7 @@ public class SongFileImpl implements SongFile {
 			case "video/x-ogm+ogg":
 			case "video/x-vorbis+ogg":
 			case "video/x-wav":
-				return Optional.of(genericMediaFrom(path, localMimeType));
+				return genericMediaFrom(path, localMimeType).map(sf -> sf.validate());
 			default:
 				LOG.warn(String.format("Unknown file type %s for %s.", localMimeType, path));
 				return Optional.empty();

@@ -6,6 +6,8 @@ import java.util.Optional;
 
 public interface SongFile {
 
+	public String getSha512();
+
 	public String getPath();
 
 	public String getMimeType();
