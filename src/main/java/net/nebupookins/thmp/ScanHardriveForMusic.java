@@ -20,6 +20,7 @@ public class ScanHardriveForMusic implements Runnable {
 
 	private final Random rng = new Random();
 	private final LocalSongFileDB db;
+	private final List<Path> filesToScan = new ArrayList<>();
 	private final List<Path> directoriesToScan = new ArrayList<>();
 
 	public ScanHardriveForMusic(LocalSongFileDB db) {
@@ -34,7 +35,16 @@ public class ScanHardriveForMusic implements Runnable {
 			directoriesToScan.add(root);
 		}
 		directoriesToScan.add(defaultFS.getPath(System.getProperty("user.home")));
-		scanNextFile: while (!directoriesToScan.isEmpty()) {
+		scanNextFile: while (!filesToScan.isEmpty() || !directoriesToScan.isEmpty()) {
+			// Go through all files.
+			while (!filesToScan.isEmpty()) {
+				Path nextPath = filesToScan.remove(0);
+				Optional<SongFileImpl> maybeSong = SongFileImpl.fromPath(nextPath);
+				if (maybeSong.isPresent()) {
+					db.addSongFile(maybeSong.get());
+				}
+			}
+			// Pick a directory at random
 			final int nextIndex = rng.nextInt(directoriesToScan.size());
 			final Path nextPath = directoriesToScan.remove(nextIndex);
 			for (String weirdRootDirectory : WEIRD_DIRECTORY_ROOTS) {
@@ -42,22 +52,27 @@ public class ScanHardriveForMusic implements Runnable {
 					continue scanNextFile;
 				}
 			}
-			final File nextFile = nextPath.toFile();
-			if (nextFile.isDirectory()) {
-				String[] childPaths = nextFile.list();
-				if (childPaths != null) {
+			final File nextDirectory = nextPath.toFile();
+			assert !nextDirectory.isFile();
+			if (nextDirectory.isDirectory()) {
+				File[] children = nextDirectory.listFiles();
+				if (children != null) {
 					/*
 					 * childPaths can be null if we don't have permission to read the
 					 * directory.
 					 */
-					for (String childPath : childPaths) {
-						directoriesToScan.add(nextPath.resolve(childPath));
+					for (File child : children) {
+						if (child.isFile()) {
+							filesToScan.add(child.toPath());
+						} else if (child.isDirectory()) {
+							directoriesToScan.add(child.toPath());
+						} else {
+							/*
+							 * Do nothing. This is probably a socket or a pipe or something like
+							 * that.
+							 */
+						}
 					}
-				}
-			} else if (nextFile.isFile()) {
-				Optional<SongFileImpl> maybeSong = SongFileImpl.fromPath(nextPath);
-				if (maybeSong.isPresent()) {
-					db.addSongFile(maybeSong.get());
 				}
 			} else {
 				/*
