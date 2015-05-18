@@ -84,8 +84,8 @@ public class SongFileImpl implements SongFile {
 			//TODO copy other fields.
 			return Optional.of(retVal);
 		} catch (UnsupportedTagException | InvalidDataException e) {
-			LOG.warn(String.format("Could not read mp3 metadata for %s.", path), e);
-			return Optional.of(genericMediaFrom(path, "audio/mpeg"));
+			LOG.debug(String.format("Could not read mp3 metadata for %s.", path), e);
+			return Optional.empty();
 		} catch (IOException e) {
 			LOG.warn(String.format("Error reading ID3 file %s.", path), e);
 			return Optional.empty();
@@ -107,6 +107,7 @@ public class SongFileImpl implements SongFile {
 			case "audio/flac":
 			case "audio/midi":
 			case "audio/mp4":
+			case "audio/ogg":
 			case "audio/x-mod":
 			case "audio/x-ms-wma":
 			case "audio/x-musepack":
