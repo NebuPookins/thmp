@@ -141,18 +141,16 @@
 							})
 							slickGrid.onSort.subscribe(function(e, args) {
 								var sortField = args.sortCol.field;
-								songDB.sort(function(a, b) {
-									if (sortField === 'artist') {
-										if (a == null) {
-											a = "";
-										}
-										if (b == null) {
-											b = "";
-										}
+								songDB.sort(function(rowA, rowB) {
+									var fieldA = rowA[sortField];
+									var fieldB = rowB[sortField];
+									if (sortField === 'artist' || sortField === 'title') {
+										fieldA = fieldA || "";
+										fieldB = fieldB || "";
 									}
 									var result =
-										a[sortField] > b[sortField] ? 1 :
-										a[sortField] < b[sortField] ? - 1:
+										fieldA > fieldB ? 1 :
+										fieldA < fieldB ? - 1:
 										0;
 									result = args.sortAsc ? result : -result;
 									return result;
