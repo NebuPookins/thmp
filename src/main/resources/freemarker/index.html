@@ -101,15 +101,58 @@
 						}
 					});
 				});
+				function pad(str, width, padChar) {
+					str = String(str);
+					return str.length >= width ?
+						str :
+						new Array(width - str.length + 1).join(padChar) + str;
+				}
 				myLayout.registerComponent('songList', function(container, componentState) {
 					var $root = $('<div id="songList">');
 					$root.text("Loading song list...")
 					container.getElement().append($root);
 					var columns = [
-						{id: 'sha512', name: "SHA2-512", field: 'sha512', width: 80, sortable: true},
-						{id: 'mimeType', name: "Mime Type", field: 'mimeType', width: 150, sortable: true},
-						{id: 'artist', name: "Artist", field: 'artist', width: 200, sortable: true},
-						{id: 'title', name: "Title", field: 'title', width: 200, sortable: true},
+						{
+							id: 'sha512',
+							name: "SHA2-512",
+							field: 'sha512',
+							width: 80,
+							sortable: true
+						}, {
+							id: 'mimeType',
+							name: "Mime Type",
+							field: 'mimeType',
+							width: 150,
+							sortable: true
+						}, {
+							id: 'artist',
+							name: "Artist",
+							field: 'artist',
+							width: 200,
+							sortable: true
+						}, {
+							id: 'title',
+							name: "Title",
+							field: 'title',
+							width: 200,
+							sortable: true
+						}, {
+							id: 'length',
+							name: "Length",
+							field: 'playbackLengthMillis',
+							width: 120,
+							sortable: true,
+							formatter: function(row, cell, totalMillis, columnDef, dataContext) {
+								if (totalMillis === null) {
+									return null;
+								}
+								var modMillis = totalMillis % 1000;
+								var totalSeconds = (totalMillis - modMillis) / 1000;
+								var modSeconds = totalSeconds % 60;
+								var totalMinutes = (totalSeconds - modSeconds) / 60;
+								return totalMinutes + ":" + pad(modSeconds, 2, '0') + "." + pad(modMillis, 4, '0');
+							}
+						},
 					];
 					var options = {
 						enableCellNavigation: true,
@@ -147,6 +190,9 @@
 									if (sortField === 'artist' || sortField === 'title') {
 										fieldA = fieldA || "";
 										fieldB = fieldB || "";
+									} else if (sortField === 'playbackLengthMillis') {
+										fieldA = fieldA == null ? Number.POSITIVE_INFINITY : fieldA;
+										fieldB = fieldB == null ? Number.POSITIVE_INFINITY : fieldB;
 									}
 									var result =
 										fieldA > fieldB ? 1 :
@@ -192,7 +238,7 @@
 						for (var key in data) {
 							songDB.push(data[key]);
 						}
-						window.setTimeout(refreshSongList, 10000);
+						window.setTimeout(refreshSongList, 1000000);
 					});
 				}
 				refreshSongList();

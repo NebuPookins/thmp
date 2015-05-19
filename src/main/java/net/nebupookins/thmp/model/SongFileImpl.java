@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +40,19 @@ public class SongFileImpl implements SongFile {
 	
 	private Optional<String> title  = Optional.empty();
 	
-	public SongFileImpl validate() {
-		Validate.notBlank(path);
-		Validate.notBlank(sha512);
-		Validate.notBlank(mimeType);
-		return this;
+	private Optional<Long> playbackLengthMillis  = Optional.empty();
+	
+	public Optional<SongFileImpl> validate() {
+		try {
+			Validate.notBlank(path);
+			Validate.notBlank(sha512);
+			Validate.notBlank(mimeType);
+			playbackLengthMillis.ifPresent(millis -> Validate.validState(millis >= 0));
+			return Optional.of(this);
+		} catch (RuntimeException e) {
+			LOG.warn("Invalid SongFile.", e);;
+			return Optional.empty();
+		}
 	}
 
 	@Override
@@ -69,6 +78,11 @@ public class SongFileImpl implements SongFile {
 	@Override
 	public Optional<String> getTitle() {
 		return this.title;
+	}
+	
+	@Override
+	public Optional<Long> getPlaybackLengthMillis() {
+		return this.playbackLengthMillis;
 	}
 
 	@Override
@@ -115,6 +129,9 @@ public class SongFileImpl implements SongFile {
 				Optional<ID3v2> maybeId3v2 = Optional.ofNullable(mp3File.getId3v2Tag());
 				retVal.artist = max(maybeId3v1, maybeId3v2, t -> t.getArtist());
 				retVal.title = max(maybeId3v1, maybeId3v2, t -> t.getTitle());
+				retVal.playbackLengthMillis = Optional.of(mp3File.getLengthInMilliseconds()).map(
+						//Apparently Mp3agic sometimes returns negative results?
+						ms -> ms < 0 ? 0 : ms); 
 				// TODO copy other fields.
 				return Optional.of(retVal);
 			} catch (UnsupportedTagException | InvalidDataException e) {
@@ -135,7 +152,7 @@ public class SongFileImpl implements SongFile {
 			}
 			switch (localMimeType) {
 			case MIMETYPE_MP3:
-				return mp3From(path).map(song -> song.validate());
+				return mp3From(path).flatMap(song -> song.validate());
 				// TODO: Add metadata support for these formats.
 			case "application/vnd.adobe.flash.movie":
 			case "audio/basic": // .au files.
@@ -159,7 +176,7 @@ public class SongFileImpl implements SongFile {
 			case "video/x-ogm+ogg":
 			case "video/x-vorbis+ogg":
 			case "video/x-wav":
-				return genericMediaFrom(path, localMimeType).map(sf -> sf.validate());
+				return genericMediaFrom(path, localMimeType).flatMap(sf -> sf.validate());
 			default:
 				LOG.warn(String.format("Unknown file type %s for %s.", localMimeType, path));
 				return Optional.empty();

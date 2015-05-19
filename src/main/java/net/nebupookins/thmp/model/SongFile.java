@@ -15,6 +15,8 @@ public interface SongFile {
 	public Optional<String> getArtist();
 	
 	public Optional<String> getTitle();
+	
+	public Optional<Long> getPlaybackLengthMillis();
 
 	public Map<String, List<String>> getExtendedMetadata();
 }
