@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import net.nebupookins.thmp.model.SongFile;
 import net.nebupookins.thmp.model.SongFileImpl;
 
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ public class ScanHardriveForMusic implements Runnable {
 			// Go through all files.
 			while (!filesToScan.isEmpty()) {
 				Path nextPath = filesToScan.remove(0);
-				Optional<SongFileImpl> maybeSong = SongFileImpl.fromPath(nextPath);
+				Optional<? extends SongFile> maybeSong = SongFileImpl.fromPath(nextPath);
 				if (maybeSong.isPresent()) {
 					db.addSongFile(maybeSong.get());
 				}

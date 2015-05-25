@@ -58,6 +58,17 @@ public class LocalSongFileDB {
 			}
 		}
 	}
+	
+	public void removeSongFile(String id) {
+		DB db = txMaker.makeTx();
+		try {
+			HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
+			map.remove(id);
+			db.commit();
+		} finally {
+			db.close();
+		}
+	}
 
 	public List<SongFile> getSongs() {
 		final DB db = txMaker.makeTx();

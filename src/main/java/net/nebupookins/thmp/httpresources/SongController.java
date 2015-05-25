@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -68,29 +69,29 @@ public class SongController {
 	@Path("/metadata")
 	@Produces(MediaType.APPLICATION_JSON)
 	public SongFile getMetadata(@QueryParam("id") String nullableId) {
-		return Optional.ofNullable(nullableId)
+		return getAndRefreshSongfile(nullableId)
+				.orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
+	}
+	
+	private Optional<? extends SongFile> getAndRefreshSongfile(@Nullable String nullableId) {
+		return Optional.<String>ofNullable(nullableId)
 				// Check that song was already in the DB (don't allow them to ask for
 				// metadata for arbitrary files).
-				.flatMap(id -> db.getSong(id))
+				.flatMap(id -> db.getSong(id).<Pair<String,SongFile>>map(song -> Pair.of(id, song)))
 				// If it was already in the DB, refresh the metadata.
-				.flatMap(song -> refreshMetadata(Paths.get(song.getPath())))
-				.orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
+				.flatMap(idSongPair -> refreshMetadata(idSongPair.getLeft(), Paths.get(idSongPair.getRight().getPath())));
 	}
 
 	@GET
 	@Path("/binary")
 	public Response getFile(@QueryParam("id") String nullableId) {
-		return Optional.ofNullable(nullableId)
-				// Check that song was already in the DB (don't allow them to ask for arbitrary files).
-				.flatMap(id -> db.getSong(id))
-				// If it was already in the DB, refresh the metadata.
-				.flatMap(song -> refreshMetadata(Paths.get(song.getPath())))
+		return getAndRefreshSongfile(nullableId)
 				//Attempt to open a FileInputStream on the song file.
 				.flatMap(song -> {
 					FileInputStream fis;
 					try {
 						fis = new FileInputStream(new File(song.getPath()));
-						return Optional.of(Pair.of(song, fis));
+						return Optional.of(Pair.<SongFile, FileInputStream>of(song, fis));
 					} catch (FileNotFoundException e) {
 						return Optional.empty();
 					}
@@ -104,11 +105,17 @@ public class SongController {
 				}).orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
 	}
 
-	private Optional<SongFileImpl> refreshMetadata(java.nio.file.Path path) {
-		final Optional<SongFileImpl> reloadedSong = SongFileImpl.fromPath(path);
-		if (reloadedSong.isPresent()) {
-			db.addSongFile(reloadedSong.get());
+	private Optional<? extends SongFile> refreshMetadata(String oldId, java.nio.file.Path path) {
+		final Optional<? extends SongFile> maybeReloadedSong = SongFileImpl.fromPath(path);
+		if (maybeReloadedSong.isPresent()) {
+			SongFile reloadedSong = maybeReloadedSong.get();
+			db.addSongFile(reloadedSong);
+			if (!oldId.equals(reloadedSong.getSha512())) {
+				db.removeSongFile(oldId);
+			}
+		} else {
+			db.removeSongFile(oldId);
 		}
-		return reloadedSong;
+		return maybeReloadedSong;
 	}
 }

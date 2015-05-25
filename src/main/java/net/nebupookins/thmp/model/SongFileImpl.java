@@ -16,6 +16,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableList;
 import com.mpatric.mp3agic.ID3v1;
 import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.InvalidDataException;
@@ -144,7 +145,7 @@ public class SongFileImpl implements SongFile {
 		});
 	}
 
-	public static Optional<SongFileImpl> fromPath(Path path) {
+	public static Optional<? extends SongFile> fromPath(Path path) {
 		try {
 			String localMimeType = Files.probeContentType(path);
 			if (isKnownNonMusicMimeType(localMimeType)) {
@@ -155,12 +156,17 @@ public class SongFileImpl implements SongFile {
 				return mp3From(path).flatMap(song -> song.validate());
 				// TODO: Add metadata support for these formats.
 			case "application/vnd.adobe.flash.movie":
+			case "application/vnd.rn-realmedia":
 			case "audio/basic": // .au files.
 			case "audio/flac":
 			case "audio/midi":
+			case "audio/mp2":
 			case "audio/mp4":
 			case "audio/ogg":
+			case "audio/x-aiff":
+			case "audio/x-it":
 			case "audio/x-mod":
+			case "audio/x-ms-asx":
 			case "audio/x-ms-wma":
 			case "audio/x-musepack":
 			case "audio/x-vorbis+ogg":
@@ -174,6 +180,7 @@ public class SongFileImpl implements SongFile {
 			case "video/x-ms-wmv":
 			case "video/x-msvideo":
 			case "video/x-ogm+ogg":
+			case "video/x-theora+ogg":
 			case "video/x-vorbis+ogg":
 			case "video/x-wav":
 				return genericMediaFrom(path, localMimeType).flatMap(sf -> sf.validate());
@@ -220,6 +227,7 @@ public class SongFileImpl implements SongFile {
 		case "application/x-rar":
 		case "application/x-raw-disk-image":
 		case "application/x-tar":
+		case "application/x-wii-rom":
 		case "application/x-xz-compressed-tar":
 		case "application/zip":
 			return true;
@@ -244,10 +252,12 @@ public class SongFileImpl implements SongFile {
 		case "application/sql":
 		case "application/vnd.iccprofile":
 		case "application/vnd.sun.xml.writer.template":
+		case "application/vnd.sun.xml.draw.template":
 		case "application/vnd.tcpdump.pcap":
 		case "application/vnd.visio":
 		case "application/winhlp":
 		case "application/x-aportisdoc":
+		case "application/x-applix-spreadsheet":
 		case "application/x-asp":
 		case "application/x-awk":
 		case "application/x-bittorrent":
@@ -256,6 +266,7 @@ public class SongFileImpl implements SongFile {
 		case "application/x-cdrdao-toc":
 		case "application/x-csh":
 		case "application/x-cue":
+		case "application/x-core":
 		case "application/x-desktop":
 		case "application/x-docbook+xml":
 		case "application/x-dvi":
@@ -292,6 +303,7 @@ public class SongFileImpl implements SongFile {
 		case "application/x-shared-library-la":
 		case "application/x-sharedlib":
 		case "application/x-shellscript":
+		case "application/x-spsf+xml":
 		case "application/x-spss-sav":
 		case "application/x-sqlite3":
 		case "application/x-subrip":
