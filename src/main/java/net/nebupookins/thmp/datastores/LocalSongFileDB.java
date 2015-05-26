@@ -87,11 +87,10 @@ public class LocalSongFileDB {
 		});
 	}
 
-	public List<SongFile> getSongs() {
-		final int MAX_SONGS = 100;
+	public List<SongFile> getSongs(final int maxResults) {
 		return withCollection(map -> {
 			boolean modifiedMap = false;
-			final List<SongFile> retVal = new ArrayList<>(MAX_SONGS);
+			final List<SongFile> retVal = new ArrayList<>(maxResults);
 			for (final Entry<String, String> songEntry : map.entrySet()) {
 				final Either<JsonProcessingException, SongFile> songObj =
 						objectMapper.readValue(songEntry.getValue(), SongFile.class);
@@ -104,7 +103,7 @@ public class LocalSongFileDB {
 					map.remove(songEntry.getKey());
 					modifiedMap = true;
 				}
-				if (retVal.size() > MAX_SONGS) {
+				if (retVal.size() >= maxResults) {
 					break;
 				}
 			}
