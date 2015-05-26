@@ -162,6 +162,7 @@ public class SongFileImpl implements SongFile {
 				return mp3From(path).flatMap(song -> song.validate());
 				// TODO: Add metadata support for these formats.
 			case "application/vnd.adobe.flash.movie":
+			case "application/vnd.rn-realaudio":
 			case "application/vnd.rn-realmedia":
 			case "audio/basic": // .au files.
 			case "audio/flac":
@@ -254,6 +255,7 @@ public class SongFileImpl implements SongFile {
 		case "application/rdf+xml":
 		case "application/rtf":
 		case "application/rss+xml":
+		case "application/sdp":
 		case "application/smil+xml":
 		case "application/sql":
 		case "application/vnd.iccprofile":

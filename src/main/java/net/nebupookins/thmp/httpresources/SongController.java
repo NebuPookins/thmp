@@ -108,7 +108,10 @@ public class SongController {
 
 	@GET
 	@Path("/binary")
-	public Response getFile(@HeaderParam("Range") final String headerRange, @QueryParam("id") final String nullableId) {
+	public Response getFile(
+			@Nullable @HeaderParam("Range") final String range,
+			@Nullable @QueryParam("id") final String nullableId
+			) {
 		return getSongFile(nullableId)
 				.map(songFile -> {
 					String mimeType = songFile.getMimeType();
@@ -117,23 +120,95 @@ public class SongController {
 					}
 					final File file = new File(songFile.getPath());
 					try {
-						final FileInputStream fileInputStream = new FileInputStream(file);
-						return Response.ok((StreamingOutput) outputStream -> {
-							try (
-									final FileChannel inputChannel = fileInputStream.getChannel();
-									final WritableByteChannel outputChannel = Channels.newChannel(outputStream)
-								) {
-									inputChannel.transferTo(0, inputChannel.size(), outputChannel);
-								}
-							})
-								.status(200)
-								.header(HttpHeaders.CONTENT_LENGTH, file.length())
-								.build();
+						if (range == null) {
+							return getWholeFile(file);
+						} else {
+							return getFileRange(file, range);
+						}
 					} catch (final FileNotFoundException e) {
 						throw new WebApplicationException(Status.NOT_FOUND);
 					}
 					// return Response.ok(new File(songFile.getPath()), mimeType).build();
 					}).orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
+	}
+
+	/*
+	 * http://httpwg.github.io/specs/rfc7233.html
+	 * 
+	 * Both the "to" and "from" are inclusive, and 0 is the first byte. Both start
+	 * and end are optional, but at least once must be present. E.g. "-500" is a
+	 * valid range, and "9400-" is a valid range.
+	 */
+	private final static Pattern rangeRequestPattern = Pattern.compile("^bytes=([0-9]*)-([0-9]*)$");
+
+	/**
+	 * Assumes that you've already vetted that the user has permission to receive
+	 * this file.
+	 */
+	private Response getFileRange(File file, String range) throws FileNotFoundException {
+		LOG.debug(String.format("getFileRange: browser requested file %s with range %s", file.getName(), range));
+		Matcher rangeRequestMatcher = rangeRequestPattern.matcher(range);
+		if (!rangeRequestMatcher.matches()) {
+			IllegalArgumentException e = new IllegalArgumentException("Invalid ranges header: " + range);
+			throw e;
+		}
+		final String strFrom = rangeRequestMatcher.group(1), strTo = rangeRequestMatcher.group(2);
+		long from, to;
+		if (StringUtils.isBlank(strFrom)) {
+			if (StringUtils.isBlank(strTo)) {
+				throw new IllegalArgumentException("Invalid ranges header; from and to can't both be blank." + range);
+			} else {
+				long offsetFromEnd = Long.parseLong(strTo);
+				to = file.length() - 1;
+				from = to - offsetFromEnd + 1; // +1 'cause both are inclusive.
+			}
+		} else {
+			from = Long.parseLong(strFrom);
+			if (StringUtils.isBlank(strTo)) {
+				to = file.length() - 1;
+			} else {
+				to = Math.min(Long.parseLong(strTo), file.length() - 1);
+			}
+		}
+		final String contentRange = String.format("bytes %d-%d/%d", from, to, file.length());
+		final RandomAccessFile raf = new RandomAccessFile(file, "r");
+		final long lengthRequested = to - from + 1;
+		LOG.debug(String.format("getFileRange: Responding with Content-Range: %s Content-Length: %s", contentRange,
+				lengthRequested));
+		return Response.ok((StreamingOutput) outputStream -> {
+			try (
+					final FileChannel inputChannel = raf.getChannel();
+					WritableByteChannel outputChannel = Channels.newChannel(outputStream);
+				) {
+					inputChannel.position(from);
+					inputChannel.transferTo(from, lengthRequested, outputChannel);
+				}
+			})
+				.header("Accept-Ranges", "bytes")
+				.header("Content-Range", contentRange)
+				.header(HttpHeaders.LAST_MODIFIED, file.lastModified())
+				.header(HttpHeaders.CONTENT_LENGTH, lengthRequested)
+				.build();
+	}
+
+	/**
+	 * Assumes that you've already vetted that the user has permission to receive
+	 * this file.
+	 */
+	private Response getWholeFile(File file) throws FileNotFoundException {
+		final FileInputStream fileInputStream = new FileInputStream(file);
+		return Response.ok((StreamingOutput) outputStream -> {
+			try (
+					final FileChannel inputChannel = fileInputStream.getChannel();
+					final WritableByteChannel outputChannel = Channels.newChannel(outputStream)
+				) {
+					inputChannel.transferTo(0, inputChannel.size(), outputChannel);
+				}
+			})
+				.status(200)
+				.header(HttpHeaders.LAST_MODIFIED, file.lastModified())
+				.header(HttpHeaders.CONTENT_LENGTH, file.length())
+				.build();
 	}
 
 	private Optional<? extends SongFile> refreshMetadata(final String oldId, final java.nio.file.Path path) {
