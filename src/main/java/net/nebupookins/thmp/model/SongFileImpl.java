@@ -1,6 +1,7 @@
 package net.nebupookins.thmp.model;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,6 +97,9 @@ public class SongFileImpl implements SongFile {
 		retVal.mimeType = mimeType;
 		try (FileInputStream fis = new FileInputStream(path.toFile())) {
 			retVal.sha512 = DigestUtils.sha512Hex(fis);
+		} catch (final FileNotFoundException e) {
+			LOG.info(String.format("FileNotFound: %s.", path));
+			return Optional.empty();
 		} catch (final IOException e) {
 			LOG.info(String.format("Could not read file %s.", path), e);
 			return Optional.empty();
