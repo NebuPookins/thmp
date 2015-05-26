@@ -105,7 +105,9 @@
 						} else {
 							url = '/api/1/songs/binary?id=' + currentSong['sha512'];
 						}
-						$video.attr('src', url);
+						if ($video.attr('src') != url) {
+							$video.attr('src', url);
+						}
 					});
 					$video.on('ended', function(e) {
 						playRandomSong(songDB, $video[0], currentSong);
