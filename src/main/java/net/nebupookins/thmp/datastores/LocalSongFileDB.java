@@ -91,7 +91,7 @@ public class LocalSongFileDB {
 		final int MAX_SONGS = 100;
 		return withCollection(map -> {
 			boolean modifiedMap = false;
-			final List<SongFile> retVal = new ArrayList<>(Math.min(map.size(), MAX_SONGS));
+			final List<SongFile> retVal = new ArrayList<>(MAX_SONGS);
 			for (final Entry<String, String> songEntry : map.entrySet()) {
 				final Either<JsonProcessingException, SongFile> songObj =
 						objectMapper.readValue(songEntry.getValue(), SongFile.class);
