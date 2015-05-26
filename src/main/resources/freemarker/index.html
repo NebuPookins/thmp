@@ -180,6 +180,14 @@
 									} else {
 										console.log("Couldn't update; song DB was mutated.");
 									}
+									/* Furthermore, if the currentSong is pointing to the song we
+									 * just mutated, let's update that too.
+									 */
+									if (currentSong['sha512'] == selectedSong['sha512']) {
+										for (var key in data) {
+											currentSong[key] = data[key];
+										}
+									}
 								});
 							})
 							slickGrid.onSort.subscribe(function(e, args) {
