@@ -10,6 +10,7 @@ import io.dropwizard.setup.Environment;
 import java.io.File;
 import java.util.concurrent.ExecutorService;
 
+import net.nebupookins.thmp.datastores.LocalSongFileDB;
 import net.nebupookins.thmp.healthchecks.MapDbHealthCheck;
 import net.nebupookins.thmp.httpresources.RootResource;
 import net.nebupookins.thmp.httpresources.SongController;

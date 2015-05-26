@@ -17,8 +17,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 
-import net.nebupookins.thmp.LocalSongFileDB;
 import net.nebupookins.thmp.SafeObjectMapper;
+import net.nebupookins.thmp.datastores.LocalSongFileDB;
 import net.nebupookins.thmp.model.SongFile;
 import net.nebupookins.thmp.model.SongFileImpl;
 

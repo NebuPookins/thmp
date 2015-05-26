@@ -1,6 +1,6 @@
 package net.nebupookins.thmp.healthchecks;
 
-import net.nebupookins.thmp.LocalSongFileDB;
+import net.nebupookins.thmp.datastores.LocalSongFileDB;
 
 import org.mapdb.DB;
 import org.mapdb.HTreeMap;

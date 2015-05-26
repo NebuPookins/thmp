@@ -1,10 +1,11 @@
-package net.nebupookins.thmp;
+package net.nebupookins.thmp.datastores;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 
+import net.nebupookins.thmp.SafeObjectMapper;
 import net.nebupookins.thmp.model.SongFile;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -25,8 +26,8 @@ public class LocalSongFileDB {
 	private final TxMaker txMaker;
 	private final SafeObjectMapper objectMapper;
 
-	public LocalSongFileDB(final TxMaker db, final SafeObjectMapper objectMapper) {
-		this.txMaker = db;
+	public LocalSongFileDB(final TxMaker txMaker, final SafeObjectMapper objectMapper) {
+		this.txMaker = txMaker;
 		this.objectMapper = objectMapper;
 	}
 
