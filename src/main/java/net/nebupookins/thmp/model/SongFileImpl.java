@@ -162,22 +162,27 @@ public class SongFileImpl implements SongFile {
 				return mp3From(path).flatMap(song -> song.validate());
 				// TODO: Add metadata support for these formats.
 			case "application/vnd.adobe.flash.movie":
-			case "application/vnd.rn-realaudio":
 			case "application/vnd.rn-realmedia":
+			case "application/x-navi-animation":
 			case "audio/basic": // .au files.
 			case "audio/flac":
 			case "audio/midi":
 			case "audio/mp2":
 			case "audio/mp4":
 			case "audio/ogg":
+			case "audio/vnd.rn-realaudio":
+			case "audio/x-aifc":
 			case "audio/x-aiff":
 			case "audio/x-it":
 			case "audio/x-mod":
 			case "audio/x-ms-asx":
 			case "audio/x-ms-wma":
 			case "audio/x-musepack":
+			case "audio/x-s3m":
+			case "audio/x-voc":
 			case "audio/x-vorbis+ogg":
 			case "audio/x-wav":
+			case "audio/x-xm":
 			case "video/mp4":
 			case "video/mpeg":
 			case "video/quicktime":
@@ -226,6 +231,7 @@ public class SongFileImpl implements SongFile {
 		case "application/x-bzip":
 		case "application/x-cd-image":
 		case "application/x-compressed-tar":
+		case "application/x-gba-rom":
 		case "application/x-genesis-rom":
 		case "application/x-lha":
 		case "application/x-lzma-compressed-tar":
@@ -240,9 +246,11 @@ public class SongFileImpl implements SongFile {
 			return true;
 		case "application/javascript":
 		case "application/json":
+		case "application/ecmascript":
 		case "application/epub+zip":
 		case "application/font-woff":
 		case "application/nemo-action":
+		case "application/mathematica":
 		case "application/mbox":
 		case "application/msword":
 		case "application/msword-template":
