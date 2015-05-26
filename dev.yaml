@@ -9,7 +9,7 @@ logging:
     "org.eclipse.jetty": INFO
     "org.glassfish.jersey": INFO
     "org.jvnet.hk2": INFO
-    "sun.rmi.transport": INFO
+    "sun.rmi": INFO
   appenders:
     - type: console
       threshold: ALL
