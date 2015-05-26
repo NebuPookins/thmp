@@ -76,6 +76,17 @@
 						}]
 					}]
 				};
+				function playRandomSong(songDB, htmlMediaElement, currentSong) {
+					var randomKey, selectedSong, canPlay;
+					do {
+						randomKey = Math.floor(Math.random() * songDB.length);
+						selectedSong = songDB[randomKey];
+						canPlay = htmlMediaElement.canPlayType(selectedSong['mimeType']);
+					} while (canPlay === '');
+					for (var key in selectedSong) {
+						currentSong[key] = selectedSong[key];
+					}
+				}
 				var myLayout = new GoldenLayout(goldenLayoutConfig);
 				myLayout.registerComponent('mediaPlayer', function(container, componentState) {
 					var $root = $('<div id="mediaPlayerContainer">');
@@ -94,11 +105,7 @@
 						$video.attr('src', url);
 					});
 					$video.on('ended', function(e) {
-						var randomKey = Math.floor(Math.random() * songDB.length);
-						var selectedSong = songDB[randomKey];
-						for (var key in selectedSong) {
-							currentSong[key] = selectedSong[key];
-						}
+						playRandomSong(songDB, $video[0], currentSong);
 					});
 				});
 				function pad(str, width, padChar) {
