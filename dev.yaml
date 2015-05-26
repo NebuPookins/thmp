@@ -5,10 +5,11 @@ logging:
   # Logger-specific levels.
   loggers:
     "io.dropwizard": INFO
-    "javax.management.mbeanserver": INFO
+    "javax.management": INFO
     "org.eclipse.jetty": INFO
     "org.glassfish.jersey": INFO
     "org.jvnet.hk2": INFO
+    "sun.rmi.transport": INFO
   appenders:
     - type: console
       threshold: ALL
