@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import net.nebupookins.thmp.model.SongFile;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.mapdb.DB;
 import org.mapdb.HTreeMap;
 import org.mapdb.TxMaker;
@@ -20,18 +21,39 @@ import fj.data.Either;
 
 public class LocalSongFileDB {
 	private final static Logger LOG = LoggerFactory.getLogger(LocalSongFileDB.class);
-	public final static String COLLECTION_NAME = "LocalSongFile";
+	public static final String COLLECTION_NAME = "LocalSongFile";
 	private final TxMaker txMaker;
 	private final SafeObjectMapper objectMapper;
 
-	public LocalSongFileDB(TxMaker db, SafeObjectMapper objectMapper) {
+	public LocalSongFileDB(final TxMaker db, final SafeObjectMapper objectMapper) {
 		this.txMaker = db;
 		this.objectMapper = objectMapper;
 	}
 
-	public void addSongFile(SongFile songFile) {
+	private static interface WithCollectionRunnable<R> {
+		/**
+		 * @return a pair of a boolean and the result. If the boolean is true, we should commit any changes made to the map.
+		 */
+		public Pair<Boolean, R> run(HTreeMap<String, String> map);
+	}
+
+	private <R> R withCollection(final WithCollectionRunnable<R> wcr) {
+		final DB db = txMaker.makeTx();
+		try {
+			final HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
+			final Pair<Boolean, R> resultTuple = wcr.run(map);
+			if (resultTuple.getLeft().booleanValue()) {
+				db.commit();
+			}
+			return resultTuple.getRight();
+		} finally {
+			db.close();
+		}
+	}
+
+	public void addSongFile(final SongFile songFile) {
 		assert !songFile.getPath().isEmpty();
-		Either<JsonProcessingException, String> songJson = objectMapper.writeValueAsString(songFile);
+		final Either<JsonProcessingException, String> songJson = objectMapper.writeValueAsString(songFile);
 		if (songJson.isRight()) {
 			retryAddingSong(songFile, songJson.right().value());
 		} else {
@@ -39,43 +61,37 @@ public class LocalSongFileDB {
 		}
 	}
 
-	private synchronized void retryAddingSong(SongFile songFile, String songJson) {
+	private synchronized void retryAddingSong(final SongFile songFile, final String songJson) {
 		int retryNumber = 0;
 		while (true) {
-			DB db = txMaker.makeTx();
 			try {
-				HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
-				map.put(songFile.getSha512(), songJson);
-				db.commit();
+				withCollection(map -> {
+					map.put(songFile.getSha512(), songJson);
+					return Pair.of(Boolean.TRUE, null);
+				});
 				return;
-			} catch (TxRollbackException e) {
+			} catch (final TxRollbackException e) {
 				retryNumber++;
 				if (retryNumber > 10) {
 					throw new RuntimeException("Could not save data even after retrying many times.", e);
 				}
-			} finally {
-				db.close();
 			}
 		}
 	}
-	
-	public void removeSongFile(String id) {
-		DB db = txMaker.makeTx();
-		try {
-			HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
+
+	public void removeSongFile(final String id) {
+		withCollection(map -> {
 			map.remove(id);
-			db.commit();
-		} finally {
-			db.close();
-		}
+			return Pair.of(Boolean.TRUE, null);
+		});
 	}
 
 	public List<SongFile> getSongs() {
-		final DB db = txMaker.makeTx();
-		try {
-			final HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
-			final List<SongFile> retVal = new ArrayList<>(map.size());
-			for (Entry<String, String> songEntry : map.entrySet()) {
+		final int MAX_SONGS = 100;
+		return withCollection(map -> {
+			boolean modifiedMap = false;
+			final List<SongFile> retVal = new ArrayList<>(Math.min(map.size(), MAX_SONGS));
+			for (final Entry<String, String> songEntry : map.entrySet()) {
 				final Either<JsonProcessingException, SongFile> songObj =
 						objectMapper.readValue(songEntry.getValue(), SongFile.class);
 				if (songObj.isRight()) {
@@ -85,36 +101,31 @@ public class LocalSongFileDB {
 							String.format("Could not deserialize song %s. Json was %s.", songEntry.getKey(), songEntry.getValue()),
 							songObj.left().value());
 					map.remove(songEntry.getKey());
+					modifiedMap = true;
 				}
-				if (retVal.size() > 10000) {
-					return retVal;
+				if (retVal.size() > MAX_SONGS) {
+					break;
 				}
 			}
-			return retVal;
-		} finally {
-			db.close();
-		}
+			return Pair.of(modifiedMap, retVal);
+		});
 	}
 
-	public Optional<SongFile> getSong(String key) {
-		DB db = txMaker.makeTx();
-		try {
-			HTreeMap<String, String> map = db.getHashMap(COLLECTION_NAME);
-			String songJson = map.get(key);
+	public Optional<SongFile> getSong(final String key) {
+		return withCollection(map -> {
+			final String songJson = map.get(key);
 			if (songJson == null) {
-				return Optional.empty();
+				return Pair.of(false, Optional.empty());
 			}
-			Either<JsonProcessingException, SongFile> songObj = objectMapper.readValue(songJson, SongFile.class);
+			final Either<JsonProcessingException, SongFile> songObj = objectMapper.readValue(songJson, SongFile.class);
 			if (songObj.isRight()) {
-				return Optional.of(songObj.right().value());
+				return Pair.of(false, Optional.of(songObj.right().value()));
 			} else {
 				LOG.warn(String.format("Could not deserialize song for key %s. Json was %s.", key, songJson), songObj.left()
 						.value());
 				map.remove(key);
-				return Optional.empty();
+				return Pair.of(true, Optional.empty());
 			}
-		} finally {
-			db.close();
-		}
+		});
 	}
 }

@@ -11,7 +11,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,19 +29,19 @@ public class SongFileImpl implements SongFile {
 			"application/xml-", "image/", "text/" };
 
 	private String path = "";
-	
+
 	private String sha512 = "";
 
 	private String mimeType = "";
 
-	private Map<String, List<String>> extendedMetadata = new HashMap<>();
+	private final Map<String, List<String>> extendedMetadata = new HashMap<>();
 
 	private Optional<String> artist = Optional.empty();
-	
+
 	private Optional<String> title  = Optional.empty();
-	
+
 	private Optional<Long> playbackLengthMillis  = Optional.empty();
-	
+
 	public Optional<SongFileImpl> validate() {
 		try {
 			Validate.notBlank(path);
@@ -50,7 +49,7 @@ public class SongFileImpl implements SongFile {
 			Validate.notBlank(mimeType);
 			playbackLengthMillis.ifPresent(millis -> Validate.validState(millis >= 0));
 			return Optional.of(this);
-		} catch (RuntimeException e) {
+		} catch (final RuntimeException e) {
 			LOG.warn("Invalid SongFile.", e);;
 			return Optional.empty();
 		}
@@ -60,7 +59,7 @@ public class SongFileImpl implements SongFile {
 	public String getPath() {
 		return this.path;
 	}
-	
+
 	@Override
 	public String getSha512() {
 		return this.sha512;
@@ -75,12 +74,12 @@ public class SongFileImpl implements SongFile {
 	public Optional<String> getArtist() {
 		return this.artist;
 	}
-	
+
 	@Override
 	public Optional<String> getTitle() {
 		return this.title;
 	}
-	
+
 	@Override
 	public Optional<Long> getPlaybackLengthMillis() {
 		return this.playbackLengthMillis;
@@ -91,20 +90,20 @@ public class SongFileImpl implements SongFile {
 		return extendedMetadata;
 	}
 
-	private static Optional<SongFileImpl> genericMediaFrom(Path path, String mimeType) {
+	private static Optional<SongFileImpl> genericMediaFrom(final Path path, final String mimeType) {
 		final SongFileImpl retVal = new SongFileImpl();
 		retVal.path = path.toString();
 		retVal.mimeType = mimeType;
 		try (FileInputStream fis = new FileInputStream(path.toFile())) {
 			retVal.sha512 = DigestUtils.sha512Hex(fis);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			LOG.info(String.format("Could not read file %s.", path), e);
 			return Optional.empty();
 		}
 		return Optional.of(retVal);
 	}
-	
-	private static Optional<String> max(Optional<String> a, Optional<String> b) {
+
+	private static Optional<String> max(final Optional<String> a, final Optional<String> b) {
 		if (a.isPresent()) {
 			if (b.isPresent()) {
 				return Optional.of(a.get().length() > b.get().length() ? a.get() : b.get());
@@ -115,19 +114,19 @@ public class SongFileImpl implements SongFile {
 			return b;
 		}
 	}
-	
-	private static Optional<String> max(Optional<ID3v1> a, Optional<ID3v2> b, Function<? super ID3v1, String> f) {
+
+	private static Optional<String> max(final Optional<ID3v1> a, final Optional<ID3v2> b, final Function<? super ID3v1, String> f) {
 		return max(a.map(t -> f.apply(t)), b.map(t -> f.apply(t)));
 	}
 
 	private final static String MIMETYPE_MP3 = "audio/mpeg";
 
-	private static Optional<SongFileImpl> mp3From(Path path) {
+	private static Optional<SongFileImpl> mp3From(final Path path) {
 		return genericMediaFrom(path, MIMETYPE_MP3).flatMap(retVal -> {
 			try {
-				Mp3File mp3File = new Mp3File(path.toFile());
-				Optional<ID3v1> maybeId3v1 = Optional.ofNullable(mp3File.getId3v1Tag());
-				Optional<ID3v2> maybeId3v2 = Optional.ofNullable(mp3File.getId3v2Tag());
+				final Mp3File mp3File = new Mp3File(path.toFile());
+				final Optional<ID3v1> maybeId3v1 = Optional.ofNullable(mp3File.getId3v1Tag());
+				final Optional<ID3v2> maybeId3v2 = Optional.ofNullable(mp3File.getId3v2Tag());
 				retVal.artist = max(maybeId3v1, maybeId3v2, t -> t.getArtist());
 				retVal.title = max(maybeId3v1, maybeId3v2, t -> t.getTitle());
 				retVal.playbackLengthMillis = Optional.of(mp3File.getLengthInMilliseconds()).map(
@@ -138,16 +137,19 @@ public class SongFileImpl implements SongFile {
 			} catch (UnsupportedTagException | InvalidDataException e) {
 				LOG.debug(String.format("Could not read mp3 metadata for %s.", path), e);
 				return Optional.empty();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				LOG.warn(String.format("Error reading ID3 file %s.", path), e);
 				return Optional.empty();
 			}
 		});
 	}
 
-	public static Optional<? extends SongFile> fromPath(Path path) {
+	public static Optional<? extends SongFile> fromPath(final Path path) {
 		try {
-			String localMimeType = Files.probeContentType(path);
+			final String localMimeType = Files.probeContentType(path);
+			if (localMimeType == null) {
+				throw new NullPointerException(String.format("This should never happen. probContentType returned null for %s.", path));
+			}
 			if (isKnownNonMusicMimeType(localMimeType)) {
 				return Optional.empty();
 			}
@@ -188,14 +190,14 @@ public class SongFileImpl implements SongFile {
 				LOG.warn(String.format("Unknown file type %s for %s.", localMimeType, path));
 				return Optional.empty();
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			LOG.warn(String.format("Could not determine mimetype of file %s.", path), e);
 			return Optional.empty();
 		}
 	}
 
-	private static boolean isKnownNonMusicMimeType(String mimeType) throws IOException {
-		for (String nonMusicPrefix : NON_MUSIC_MIME_PREFIXES) {
+	private static boolean isKnownNonMusicMimeType(final String mimeType) throws IOException {
+		for (final String nonMusicPrefix : NON_MUSIC_MIME_PREFIXES) {
 			if (mimeType.startsWith(nonMusicPrefix)) {
 				return true;
 			}
