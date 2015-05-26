@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 import javax.annotation.Nullable;
@@ -26,6 +27,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.codahale.metrics.Timer.Context;
+import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,41 +44,50 @@ public class SongController {
 	private final JsonFactory factory;
 	private final SafeObjectMapper objectMapper;
 
-	public SongController(LocalSongFileDB db, SafeObjectMapper objectMapper) {
+
+	public SongController(final LocalSongFileDB db, final SafeObjectMapper objectMapper, final MetricRegistry metricRegistry) {
 		this.factory = new JsonFactory();
 		this.db = db;
 		this.objectMapper = objectMapper;
+		this.getSongListJsonGeneratorTimer = metricRegistry.timer(MetricRegistry.name(SongController.class, "getSongListJsonGenerator"));
 	}
+
+	private final Timer getSongListJsonGeneratorTimer;
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
+	@Timed
 	public StreamingOutput getSongList() {
 		return output -> {
-			JsonGenerator generator = factory.createGenerator(output);
-			generator.writeStartArray();
-			for (SongFile song : db.getSongs()) {
-				Either<JsonProcessingException, String> songJson = objectMapper.writeValueAsString(song);
-				if (songJson.isRight()) {
-					generator.writeRawValue(songJson.right().value());
-				} else {
-					LOG.warn(String.format("Could not serialize json for song %s",song), songJson.left().value());
+			try (Context context = getSongListJsonGeneratorTimer.time()) {
+				try (JsonGenerator generator = factory.createGenerator(output)) {
+					generator.writeStartArray();
+					List<SongFile> dbSongs = db.getSongs();
+					LOG.info(String.format("Writing out list of %s songs.", dbSongs.size()));
+					for (final SongFile song : dbSongs) {
+						final Either<JsonProcessingException, String> songJson = objectMapper.writeValueAsString(song);
+						if (songJson.isRight()) {
+							generator.writeRawValue(songJson.right().value());
+						} else {
+							LOG.warn(String.format("Could not serialize json for song %s", song), songJson.left().value());
+						}
+					}
+					generator.writeEndArray();
+					generator.flush();
 				}
 			}
-			generator.writeEndArray();
-			generator.flush();
-			generator.close();
 		};
 	}
 
 	@GET
 	@Path("/metadata")
 	@Produces(MediaType.APPLICATION_JSON)
-	public SongFile getMetadata(@QueryParam("id") String nullableId) {
+	public SongFile getMetadata(@QueryParam("id") final String nullableId) {
 		return getAndRefreshSongfile(nullableId)
 				.orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
 	}
-	
-	private Optional<? extends SongFile> getAndRefreshSongfile(@Nullable String nullableId) {
+
+	private Optional<? extends SongFile> getAndRefreshSongfile(@Nullable final String nullableId) {
 		return Optional.<String>ofNullable(nullableId)
 				// Check that song was already in the DB (don't allow them to ask for
 				// metadata for arbitrary files).
@@ -84,7 +98,7 @@ public class SongController {
 
 	@GET
 	@Path("/binary")
-	public Response getFile(@QueryParam("id") String nullableId) {
+	public Response getFile(@QueryParam("id") final String nullableId) {
 		return getAndRefreshSongfile(nullableId)
 				//Attempt to open a FileInputStream on the song file.
 				.flatMap(song -> {
@@ -92,7 +106,7 @@ public class SongController {
 					try {
 						fis = new FileInputStream(new File(song.getPath()));
 						return Optional.of(Pair.<SongFile, FileInputStream>of(song, fis));
-					} catch (FileNotFoundException e) {
+					} catch (final FileNotFoundException e) {
 						return Optional.empty();
 					}
 				})
@@ -105,10 +119,10 @@ public class SongController {
 				}).orElseThrow(() -> new WebApplicationException(Status.NOT_FOUND));
 	}
 
-	private Optional<? extends SongFile> refreshMetadata(String oldId, java.nio.file.Path path) {
+	private Optional<? extends SongFile> refreshMetadata(final String oldId, final java.nio.file.Path path) {
 		final Optional<? extends SongFile> maybeReloadedSong = SongFileImpl.fromPath(path);
 		if (maybeReloadedSong.isPresent()) {
-			SongFile reloadedSong = maybeReloadedSong.get();
+			final SongFile reloadedSong = maybeReloadedSong.get();
 			db.addSongFile(reloadedSong);
 			if (!oldId.equals(reloadedSong.getSha512())) {
 				db.removeSongFile(oldId);
