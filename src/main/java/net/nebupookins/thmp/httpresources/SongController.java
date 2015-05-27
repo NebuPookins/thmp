@@ -8,6 +8,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -32,6 +33,7 @@ import net.nebupookins.thmp.model.SongFile;
 import net.nebupookins.thmp.model.SongFileImpl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,9 +123,9 @@ public class SongController {
 					final File file = new File(songFile.getPath());
 					try {
 						if (range == null) {
-							return getWholeFile(file);
+							return getWholeFile(mimeType, file);
 						} else {
-							return getFileRange(file, range);
+							return getFileRange(mimeType, file, range);
 						}
 					} catch (final FileNotFoundException e) {
 						throw new WebApplicationException(Status.NOT_FOUND);
@@ -134,7 +136,7 @@ public class SongController {
 
 	/*
 	 * http://httpwg.github.io/specs/rfc7233.html
-	 * 
+	 *
 	 * Both the "to" and "from" are inclusive, and 0 is the first byte. Both start
 	 * and end are optional, but at least once must be present. E.g. "-500" is a
 	 * valid range, and "9400-" is a valid range.
@@ -145,11 +147,11 @@ public class SongController {
 	 * Assumes that you've already vetted that the user has permission to receive
 	 * this file.
 	 */
-	private Response getFileRange(File file, String range) throws FileNotFoundException {
+	private Response getFileRange(final String mimeType, final File file, final String range) throws FileNotFoundException {
 		LOG.debug(String.format("getFileRange: browser requested file %s with range %s", file.getName(), range));
-		Matcher rangeRequestMatcher = rangeRequestPattern.matcher(range);
+		final Matcher rangeRequestMatcher = rangeRequestPattern.matcher(range);
 		if (!rangeRequestMatcher.matches()) {
-			IllegalArgumentException e = new IllegalArgumentException("Invalid ranges header: " + range);
+			final IllegalArgumentException e = new IllegalArgumentException("Invalid ranges header: " + range);
 			throw e;
 		}
 		final String strFrom = rangeRequestMatcher.group(1), strTo = rangeRequestMatcher.group(2);
@@ -158,7 +160,7 @@ public class SongController {
 			if (StringUtils.isBlank(strTo)) {
 				throw new IllegalArgumentException("Invalid ranges header; from and to can't both be blank." + range);
 			} else {
-				long offsetFromEnd = Long.parseLong(strTo);
+				final long offsetFromEnd = Long.parseLong(strTo);
 				to = file.length() - 1;
 				from = to - offsetFromEnd + 1; // +1 'cause both are inclusive.
 			}
@@ -186,7 +188,8 @@ public class SongController {
 			})
 				.header("Accept-Ranges", "bytes")
 				.header("Content-Range", contentRange)
-				.header(HttpHeaders.LAST_MODIFIED, file.lastModified())
+				.header(HttpHeaders.CONTENT_TYPE, mimeType)
+				.header(HttpHeaders.LAST_MODIFIED, DateUtils.formatDate(new Date(file.lastModified())))
 				.header(HttpHeaders.CONTENT_LENGTH, lengthRequested)
 				.build();
 	}
@@ -195,7 +198,7 @@ public class SongController {
 	 * Assumes that you've already vetted that the user has permission to receive
 	 * this file.
 	 */
-	private Response getWholeFile(File file) throws FileNotFoundException {
+	private Response getWholeFile(final String mimeType, final File file) throws FileNotFoundException {
 		final FileInputStream fileInputStream = new FileInputStream(file);
 		return Response.ok((StreamingOutput) outputStream -> {
 			try (
@@ -206,7 +209,8 @@ public class SongController {
 				}
 			})
 				.status(200)
-				.header(HttpHeaders.LAST_MODIFIED, file.lastModified())
+				.header(HttpHeaders.CONTENT_TYPE, mimeType)
+				.header(HttpHeaders.LAST_MODIFIED, DateUtils.formatDate(new Date(file.lastModified())))
 				.header(HttpHeaders.CONTENT_LENGTH, file.length())
 				.build();
 	}
